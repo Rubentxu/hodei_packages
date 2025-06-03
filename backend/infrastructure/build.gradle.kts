@@ -7,7 +7,6 @@ dependencies {
     implementation(project(":backend:domain"))
 
     implementation(project(":backend:application"))
-    implementation(libs.kotlin.stdlib.jdk8)
 
     // Database
 
@@ -16,6 +15,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core) // Added for coroutine support (Dispatchers, withContext)
 
     // Testing
+    testImplementation(kotlin("test-junit5"))
     testImplementation(libs.kotest.runner.junit5) // Note: Original was kotest-runner-junit5-jvm:5.8.0, catalog uses 5.8.1
     testImplementation(libs.kotest.assertions.core) // Note: Original was kotest-assertions-core-jvm:5.8.0, catalog uses 5.8.1
     testImplementation(libs.mockk) // Note: Original was 1.13.10, catalog uses 1.13.11
@@ -23,4 +23,5 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.junit.jupiter.api) // Note: Original was 5.9.2, catalog uses 5.10.2
     testRuntimeOnly(libs.junit.jupiter.engine) // Note: Original was 5.9.2, catalog uses 5.10.2
+
 }

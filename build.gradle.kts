@@ -20,3 +20,16 @@ allprojects {
     }
 
 }
+
+tasks.register("allTests") {
+    description = "Ejecuta todos los tests de los módulos hijos"
+    group = "verification"
+
+    // Dependencia dinámica en todas las tareas de test de submódulos
+    dependsOn(subprojects.map { it.tasks.withType<Test>() })
+
+    // Asegura que esta tarea se ejecute después de que se configuren todas las tareas de test en los submódulos
+    subprojects.forEach { subproject ->
+        mustRunAfter(subproject.tasks.withType<Test>())
+    }
+}

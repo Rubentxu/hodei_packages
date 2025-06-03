@@ -4,6 +4,7 @@ import dev.rubentxu.hodei.packages.application.shared.Result
 import dev.rubentxu.hodei.packages.domain.model.AdminUser
 import dev.rubentxu.hodei.packages.domain.repository.UserRepository
 import dev.rubentxu.hodei.packages.application.security.PasswordHasher
+import dev.rubentxu.hodei.packages.application.security.TokenService
 import kotlinx.coroutines.Dispatchers
 import java.time.Instant
 import java.util.UUID
@@ -11,7 +12,8 @@ import kotlinx.coroutines.withContext
 
 class AuthServiceImpl(
     private val userRepository: UserRepository,
-    private val passwordHasher: PasswordHasher
+    private val passwordHasher: PasswordHasher,
+    private val tokenService: TokenService
 ) : AuthService {
     override suspend fun registerFirstAdmin(command: RegisterAdminCommand): Result<AuthenticationResult, AuthServiceError> {
         // Input Validation
@@ -45,7 +47,8 @@ class AuthServiceImpl(
                     )
                     val savedUser = userRepository.save(adminUser)
                     // AuthenticationResult now includes more details from the saved user
-                    Result.success(AuthenticationResult(savedUser.username, savedUser.email, "mock-token", "")) // Assuming token generation happens elsewhere or is static for now
+                    val token = tokenService.generateToken(savedUser.id.toString(), savedUser.username, savedUser.email)
+                    Result.success(AuthenticationResult(savedUser.username, savedUser.email, token, "")) // Assuming token generation happens elsewhere or is static for now
                 }
             }
         } catch (e: Exception) {
