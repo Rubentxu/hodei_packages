@@ -1,5 +1,8 @@
 package dev.rubentxu.hodei.packages.api.features.auth.routes
 
+import org.junit.jupiter.api.AfterEach
+import org.koin.core.context.stopKoin
+
 import dev.rubentxu.hodei.packages.app.features.auth.model.*
 import dev.rubentxu.hodei.packages.app.features.auth.routes.authRoutes
 import dev.rubentxu.hodei.packages.application.auth.*
@@ -13,23 +16,25 @@ import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.config.*
 import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.plugins.requestvalidation.RequestValidation
-import io.ktor.server.plugins.requestvalidation.RequestValidationException
-import io.ktor.server.plugins.requestvalidation.ValidationResult
-import io.ktor.server.plugins.statuspages.StatusPages
-import io.ktor.server.plugins.statuspages.exception
+import io.ktor.server.plugins.requestvalidation.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.testing.*
 import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 import kotlin.test.*
 
+
 class AuthRoutesTest {
+
+    @AfterEach
+    fun tearDown() {
+        stopKoin()
+    }
     private val authService = mockk<AuthService>()
     private val jsonConfig = Json {
         prettyPrint = true
@@ -48,8 +53,15 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.registerFirstAdmin(io.mockk.any<RegisterAdminCommand>()) } returns
-                Result.success(AuthenticationResult("Admin registered successfully", "admin_token", "admin@example.com", "adminUser"))
+        coEvery { authService.registerFirstAdmin(any<RegisterAdminCommand>()) } returns
+                Result.success(
+                    AuthenticationResult(
+                        username = "adminUser",
+                        email = "admin@example.com",
+                        token = "admin_token",
+                        message = "Admin registered successfully"
+                    )
+                )
 
         val client = createClient {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
@@ -131,7 +143,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.registerFirstAdmin(io.mockk.any<RegisterAdminCommand>()) } returns
+        coEvery { authService.registerFirstAdmin(any<RegisterAdminCommand>()) } returns
                 Result.failure(AuthServiceError.AdminAlreadyExists)
 
         val client = createClient {
@@ -166,8 +178,8 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.login(io.mockk.any<LoginCommand>()) } returns
-                Result.success(AuthenticationResult("Login successful", "user_token", "user@example.com", "testUser"))
+        coEvery { authService.login(any<LoginCommand>()) } returns
+                Result.success(AuthenticationResult(username = "testUser", email = "user@example.com", token = "user_token", message = "Login successful"))
 
         val client = createClient {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
@@ -240,7 +252,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.login(io.mockk.any<LoginCommand>()) } returns
+        coEvery { authService.login(any<LoginCommand>()) } returns
                 Result.failure(AuthServiceError.InvalidCredentials)
 
         val client = createClient {
@@ -274,7 +286,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.login(io.mockk.any<LoginCommand>()) } returns
+        coEvery { authService.login(any<LoginCommand>()) } returns
                 Result.failure(AuthServiceError.UserNotFound)
 
         val client = createClient {

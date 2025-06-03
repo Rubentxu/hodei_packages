@@ -1,7 +1,7 @@
 package dev.rubentxu.hodei.packages.application.auth
 
 sealed class AuthServiceError {
-    data class ValidationErrors(val errors: List<String>) : AuthServiceError()
+    data class ValidationFailed(val reason: String) : AuthServiceError()
 
     data object AdminAlreadyExists : AuthServiceError()
 
@@ -9,5 +9,5 @@ sealed class AuthServiceError {
 
     data object InvalidCredentials : AuthServiceError()
 
-    data class UnknownError(val message: String) : AuthServiceError()
+    data class UnexpectedError(val message: String, val cause: Throwable? = null) : AuthServiceError()
 }

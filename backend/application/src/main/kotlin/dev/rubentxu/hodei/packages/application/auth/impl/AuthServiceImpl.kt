@@ -14,6 +14,6 @@ class AuthServiceImpl : AuthService {
     }
 
     override suspend fun login(command: LoginCommand): Result<AuthenticationResult, AuthServiceError> {
-        return Result.success(AuthenticationResult("token", "Login successful"))
+        return Result.success(AuthenticationResult("placeholder_user", "placeholder_email@example.com", "token", "Login successful"))
     }
 }
