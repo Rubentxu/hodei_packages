@@ -1,0 +1,53 @@
+package dev.rubentxu.hodei.packages.domain.repository
+
+import dev.rubentxu.hodei.packages.domain.model.repository.Repository
+import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+import java.util.UUID
+
+/**
+ * Puerto (interfaz) para la persistencia de repositorios de artefactos.
+ * Define operaciones CRUD y de búsqueda para repositorios.
+ */
+interface RepositoryRepository {
+    /**
+     * Guarda un nuevo repositorio o actualiza uno existente.
+     * @param repository El repositorio a guardar
+     * @return El repositorio guardado con posibles modificaciones (ej. ID generado)
+     */
+    suspend fun save(repository: Repository): Repository
+    
+    /**
+     * Busca un repositorio por su ID.
+     * @param id ID del repositorio
+     * @return El repositorio si existe, null en caso contrario
+     */
+    suspend fun findById(id: UUID): Repository?
+    
+    /**
+     * Busca un repositorio por su nombre.
+     * @param name Nombre del repositorio
+     * @return El repositorio si existe, null en caso contrario
+     */
+    suspend fun findByName(name: String): Repository?
+    
+    /**
+     * Obtiene todos los repositorios del sistema.
+     * @param type Tipo opcional de repositorio para filtrar (MAVEN, NPM)
+     * @return Lista de repositorios
+     */
+    suspend fun findAll(type: RepositoryType? = null): List<Repository>
+    
+    /**
+     * Verifica si existe un repositorio con el nombre dado.
+     * @param name Nombre del repositorio
+     * @return true si existe, false en caso contrario
+     */
+    suspend fun existsByName(name: String): Boolean
+    
+    /**
+     * Elimina un repositorio por su ID.
+     * @param id ID del repositorio a eliminar
+     * @return true si se eliminó correctamente, false si no existía
+     */
+    suspend fun deleteById(id: UUID): Boolean
+}
