@@ -11,6 +11,7 @@ data class Repository(
     val id: UUID,
     val name: String,
     val type: RepositoryType,
+    val storageType: StorageType, // Added storageType field
     val description: String,
     val createdBy: UUID,
     val createdAt: Instant,
