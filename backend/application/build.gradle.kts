@@ -1,23 +1,23 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktlint)
 }
 
 dependencies {
     implementation(project(":backend:domain"))
-    implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0")
-    implementation("io.insert-koin:koin-core:3.5.3")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.koin.core)
 
     // Testing
-    testImplementation(kotlin("test"))
-    testImplementation("io.kotest:kotest-runner-junit5:5.8.1")
-    testImplementation("io.kotest:kotest-assertions-core:5.8.1")
-    testImplementation("io.mockk:mockk:1.13.11")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }
 
 tasks.withType<Test> {

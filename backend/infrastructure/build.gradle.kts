@@ -1,25 +1,25 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
-    id("org.jetbrains.kotlin.plugin.serialization") // If using kotlinx.serialization for DB DTOs etc.
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization) // If using kotlinx.serialization for DB DTOs etc.
 }
 
 dependencies {
     implementation(project(":backend:domain"))
 
     implementation(project(":backend:application"))
-    implementation(kotlin("stdlib-jdk8"))
+    implementation(libs.kotlin.stdlib.jdk8)
 
     // Database
 
-    implementation("org.postgresql:postgresql:42.7.3")
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation(libs.postgresql.driver)
+    implementation(libs.hikariCP)
 
     // Testing
-    testImplementation("io.kotest:kotest-runner-junit5-jvm:5.8.0")
-    testImplementation("io.kotest:kotest-assertions-core-jvm:5.8.0")
-    testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation("org.testcontainers:postgresql:1.19.7")
-    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+    testImplementation(libs.kotest.runner.junit5) // Note: Original was kotest-runner-junit5-jvm:5.8.0, catalog uses 5.8.1
+    testImplementation(libs.kotest.assertions.core) // Note: Original was kotest-assertions-core-jvm:5.8.0, catalog uses 5.8.1
+    testImplementation(libs.mockk) // Note: Original was 1.13.10, catalog uses 1.13.11
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.junit.jupiter.api) // Note: Original was 5.9.2, catalog uses 5.10.2
+    testRuntimeOnly(libs.junit.jupiter.engine) // Note: Original was 5.9.2, catalog uses 5.10.2
 }

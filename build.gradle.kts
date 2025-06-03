@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.1.21" apply false
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0" apply false
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.ktlint) apply false
     `java-library`
 }
 

@@ -1,14 +1,14 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktlint)
 }
 
 dependencies {
-    implementation(kotlin("stdlib-jdk8"))
+    implementation(libs.kotlin.stdlib.jdk8)
     // This module should remain free of framework dependencies.
 
     // Testing
-    testImplementation(kotlin("test"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
 }

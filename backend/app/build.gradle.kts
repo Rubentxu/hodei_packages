@@ -1,7 +1,7 @@
 plugins {
-    kotlin("jvm") version "2.1.21"
-    kotlin("plugin.serialization") version "2.1.21"
-    id("io.ktor.plugin") version "3.1.3"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ktor)
     application
 }
 
@@ -19,37 +19,37 @@ dependencies {
     implementation(project(":backend:infrastructure"))
     
     // Ktor
-    implementation("io.ktor:ktor-server-core-jvm:3.1.3")
-    implementation("io.ktor:ktor-server-netty-jvm:3.1.3")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:3.1.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:3.1.3")
-    implementation("io.ktor:ktor-server-request-validation:3.1.3")
-    implementation("io.ktor:ktor-server-auth:3.1.3")
-    implementation("io.ktor:ktor-server-status-pages:3.1.3")
-    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation(libs.ktor.server.core)
+    implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.contentNegotiation)
+    implementation(libs.ktor.serialization.kotlinxJson)
+    implementation(libs.ktor.server.requestValidation)
+    implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.statusPages)
+    implementation(libs.hikariCP)
     
     // Testing
-    testImplementation("io.ktor:ktor-server-test-host:3.1.3")
-    testImplementation("io.ktor:ktor-client-content-negotiation-jvm:3.1.3")
-    testImplementation("io.kotest:kotest-runner-junit5:5.8.1")
-    testImplementation(kotlin("test-junit5"))
+    testImplementation(libs.ktor.server.testHost)
+    testImplementation(libs.ktor.client.contentNegotiation)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotlin.test.junit5)
 
     // Koin for dependency injection
-    implementation("io.insert-koin:koin-ktor:3.5.0")
-    implementation("io.insert-koin:koin-logger-slf4j:3.5.0")
-    testImplementation("io.insert-koin:koin-test:3.5.0") {
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.loggerSlf4j)
+    testImplementation(libs.koin.test) {
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-test-junit")
     }
-    testImplementation("io.insert-koin:koin-test-junit5:3.5.0") {
+    testImplementation(libs.koin.test.junit5) {
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-test-junit")
     }
 
 
     // MockK for mocking
-    testImplementation("io.mockk:mockk:1.13.11")
+    testImplementation(libs.mockk)
 
     // Kotlinx Coroutines Test
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0")
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 tasks.withType<Test> {
