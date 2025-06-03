@@ -3,11 +3,13 @@
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 dependencies {
     implementation(libs.kotlin.stdlib.jdk8)
     // This module should remain free of framework dependencies.
+    implementation(libs.kotlinx.serialization.json)
 
     // Testing
     testImplementation(libs.kotlin.test)

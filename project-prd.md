@@ -410,6 +410,193 @@ Esta sección resume aspectos críticos relativos a seguridad de la solución y 
 
 En resumen, el sistema está pensado para **crecer de forma segura**. Mediante buenas prácticas de seguridad, minimizamos riesgos de brechas o abuso; mediante un diseño escalable y la opción de aprovechar servicios cloud, nos aseguramos de poder atender a un creciente número de usuarios y artefactos sin rediseñar desde cero.
 
+## Seguridad de la Cadena de Suministro: Integración de SBOM y Grafos Merkle
+
+La seguridad de la cadena de suministro de software se ha convertido en una preocupación crítica en el desarrollo moderno. Para abordar esta necesidad, Hodei Packages incorporará capacidades avanzadas de gestión de Software Bill of Materials (SBOM) y verificación criptográfica basada en grafos Merkle. Estas características permitirán a las organizaciones verificar la integridad de los artefactos, rastrear dependencias y gestionar vulnerabilidades de manera efectiva.
+
+### Visión General y Fundamentos
+
+Integrar la gestión de SBOM y la verificación criptográfica mediante grafos Merkle en Hodei Packages mejorará significativamente la seguridad de la cadena de suministro. Estas características proporcionarán verificación de integridad de artefactos, trazabilidad de dependencias y capacidades de gestión de vulnerabilidades críticas para las prácticas modernas de desarrollo seguro de software.
+
+### Componentes Clave y Arquitectura
+
+* **Generación y Gestión de SBOM:** El sistema soportará la generación, almacenamiento y recuperación de SBOMs para los artefactos subidos, siguiendo estándares de la industria como CycloneDX y SPDX.
+
+* **Verificación Criptográfica mediante Grafos Merkle:** Implementaremos un sistema de almacenamiento direccionable por contenido utilizando Grafos Acíclicos Dirigidos (DAG) de Merkle para habilitar el versionado a prueba de manipulaciones y la verificación criptográfica de artefactos.
+
+* **Integración con la Arquitectura Principal:** Estas características se implementarán siguiendo nuestra arquitectura hexagonal existente, añadiendo nuevas entidades de dominio, puertos y adaptadores mientras se mantiene una clara separación de responsabilidades.
+
+### Especificaciones Funcionales
+
+#### Gestión de SBOM
+
+* **Generación de SBOM:**
+  * Soporte para generación automática de documentos SBOM durante la carga de artefactos
+  * Extracción de información de dependencias de formatos comunes de paquetes (Maven POM, package.json de npm, etc.)
+  * Permitir la carga manual de SBOM junto con los artefactos
+  * Soporte para formatos CycloneDX y SPDX con extensibilidad para futuros estándares
+
+* **Almacenamiento y Recuperación de SBOM:**
+  * Almacenar SBOMs como documentos inmutables y versionados vinculados a sus respectivos artefactos
+  * Proporcionar endpoints API para recuperar SBOMs en múltiples formatos (JSON, XML, etc.)
+  * Permitir consultar artefactos por componentes/dependencias listados en sus SBOMs
+
+* **Análisis de SBOM:**
+  * Implementar interfaces para la integración de escaneo de vulnerabilidades
+  * Soportar la visualización de grafos de dependencias a través de la UI
+  * Permitir comparar SBOMs entre versiones de artefactos para seguimiento de cambios
+
+#### Verificación mediante Grafos Merkle
+
+* **Almacenamiento Direccionable por Contenido:**
+  * Almacenar artefactos y metadatos en un sistema direccionable por contenido basado en hashes criptográficos
+  * Representar artefactos y sus dependencias como nodos en un DAG de Merkle
+  * Asegurar que cada objeto sea identificado de forma única por el hash de su contenido
+
+* **Firma y Verificación:**
+  * Soportar la firma criptográfica de hashes raíz de Merkle para demostrar autenticidad
+  * Implementar endpoints de verificación para validar la integridad de artefactos
+  * Proporcionar APIs de generación y verificación de pruebas para comprobación eficiente de integridad
+
+* **Historial Inmutable:**
+  * Mantener un historial a prueba de manipulaciones de todas las versiones de artefactos
+  * Posibilitar la verificación criptográfica de toda la cadena de dependencias
+
+### Implementación Técnica
+
+#### Extensiones del Modelo de Dominio
+
+* **Nuevas Entidades de Dominio:**
+  ```
+  domain/
+  ├── model/
+  │   ├── sbom/
+  │   │   ├── SbomDocument.kt          # Entidad para documento SBOM
+  │   │   ├── SbomComponent.kt         # Componente en un SBOM
+  │   │   └── SbomFormat.kt            # Enum de formatos soportados
+  │   └── merkle/
+  │       ├── MerkleNode.kt            # Nodo en el grafo Merkle
+  │       ├── MerkleGraph.kt           # Representación del grafo
+  │       ├── ContentHash.kt           # Value object para hash de contenido
+  │       └── Signature.kt             # Firma criptográfica
+  ```
+
+* **Nuevos Puertos (Interfaces):**
+  ```
+  domain/
+  ├── repository/
+  │   ├── SbomRepository.kt            # Almacenamiento y recuperación de SBOM
+  │   └── ContentAddressableStorage.kt  # Almacenamiento del grafo Merkle
+  ├── service/
+  │   ├── SbomService.kt               # Generación y análisis de SBOM
+  │   ├── MerkleGraphService.kt        # Construcción y recorrido de grafos
+  │   └── CryptographicService.kt      # Firma y verificación
+  ```
+
+* **Nuevos Eventos de Dominio:**
+  ```
+  domain/events/
+  ├── sbom/
+  │   ├── SbomGenerated.kt
+  │   └── SbomAnalyzed.kt
+  └── merkle/
+      ├── ArtifactVerified.kt
+      └── SignatureCreated.kt
+  ```
+
+#### Capa de Servicios de Aplicación
+
+* **Nuevos Servicios de Aplicación:**
+  * `SbomApplicationService`: Orquesta la generación, almacenamiento y análisis de SBOM
+  * `VerificationService`: Maneja la verificación criptográfica de artefactos
+  * `MerkleGraphBuilder`: Construye y mantiene grafos Merkle
+
+* **Integración con Servicios Existentes:**
+  * Extender `ArtifactService` para iniciar la generación de SBOM durante la carga de artefactos
+  * Modificar el proceso de publicación de artefactos para incluir la creación de nodos Merkle
+  * Añadir pasos de verificación a los flujos de descarga de artefactos
+
+#### Implementaciones de Infraestructura
+
+* **Adaptadores de Almacenamiento:**
+  * `FilesystemContentAddressableStorageAdapter`: Implementa almacenamiento direccionable por contenido en el sistema de archivos
+  * `S3ContentAddressableStorageAdapter`: Implementación similar para S3
+
+* **Integración con Servicios Externos:**
+  * `CycloneDXGenerator`: Genera SBOMs en formato CycloneDX
+  * `SPDXGenerator`: Genera SBOMs en formato SPDX
+  * `VulnerabilityScanner`: Integra con escáneres externos (opcional)
+
+#### Extensiones de la Capa API
+
+* **Nuevos Endpoints REST:**
+  ```
+  POST   /api/artifacts/{id}/sbom           # Generar/subir SBOM para un artefacto
+  GET    /api/artifacts/{id}/sbom           # Recuperar SBOM de un artefacto
+  GET    /api/artifacts/{id}/verify         # Verificar integridad del artefacto
+  POST   /api/artifacts/{id}/sign           # Firmar un artefacto (solo admin)
+  GET    /api/artifacts/{id}/proof          # Obtener prueba de verificación
+  ```
+
+* **Integración con Clientes:**
+  * Proporcionar librerías cliente o plugins para Maven, npm, etc., para verificar artefactos
+  * Documentar el uso de la API para integraciones personalizadas
+
+### Mejoras de la Interfaz de Usuario
+
+* **Visualización de SBOM:**
+  * Añadir visualización de grafo de dependencias en la vista de detalle de artefacto
+  * Mostrar información de vulnerabilidades cuando esté disponible
+  * Proporcionar opciones de descarga de SBOM
+
+* **Estado de Verificación:**
+  * Mostrar indicadores de estado de verificación para los artefactos
+  * Mostrar información de firma e historial de verificación
+  * Proporcionar exportación de certificado de verificación
+
+### Consideraciones de Seguridad
+
+* **Estándares Criptográficos:**
+  * Utilizar algoritmos criptográficos modernos (SHA-256/SHA-3 para hashing, Ed25519 para firmas)
+  * Seguir prácticas seguras de gestión de claves
+  * Soporte para módulos de seguridad de hardware para firma (mejora futura opcional)
+
+* **Rendimiento de Verificación:**
+  * Implementar verificación eficiente de pruebas de Merkle
+  * Considerar verificación parcial para árboles de dependencias grandes
+  * Utilizar estrategias de caché para artefactos verificados frecuentemente
+
+### Estrategia de Testing
+
+* **Pruebas Unitarias:**
+  * Probar el cálculo de hash y las operaciones del árbol Merkle
+  * Verificar la generación y análisis de SBOM
+  * Probar la creación y verificación de firmas
+  * Se utilizará Kotest con estilo de especificación descriptivo, seguido de nuestro enfoque TDD
+
+* **Pruebas de Integración:**
+  * Pruebas end-to-end para el flujo de carga-firma-verificación
+  * Pruebas de rendimiento para verificación de artefactos grandes
+  * Probar interoperabilidad con formatos estándar de SBOM
+  * Se aplicarán técnicas de mocking con MockK para aislar componentes
+
+* **Pruebas de Seguridad:**
+  * Intentar verificar artefactos modificados (debería fallar)
+  * Probar verificación con firmas inválidas
+  * Verificar protección contra ataques de colisión de hash
+
+### Alineación con la Arquitectura Existente
+
+Esta mejora preserva la arquitectura hexagonal al:
+
+1. Mantener entidades de dominio y lógica de negocio en la capa de dominio
+2. Definir puertos (interfaces) claros para servicios de infraestructura
+3. Implementar adaptadores de infraestructura que se ajusten a estos puertos
+4. Utilizar servicios de aplicación para orquestar flujos de trabajo
+5. Aprovechar el diseño basado en eventos para la integración del sistema
+
+Las funcionalidades de SBOM y grafos Merkle se integrarán perfectamente con el sistema actual de autenticación y autorización, respetando los permisos de repositorio y roles de usuario.
+
 ## Roadmap inicial
 
 Si bien la presente documentación describe la **visión global** y los requerimientos del sistema, la implementación se realizará en fases iterativas. A continuación se bosqueja un roadmap inicial con las etapas previstas, sabiendo que podría ajustarse según prioridades de negocio y aprendizajes durante el desarrollo:
@@ -437,15 +624,21 @@ Si bien la presente documentación describe la **visión global** y los requerim
     * Añadir pruebas de integración y E2E para todas estas funcionalidades.
     * **Objetivo:** Este sería un **Release 1.0** candidato para uso interno real. Debería poder reemplazar en funcionalidad básica a un Nexus/Artifactory para Maven/npm dentro de un equipo piloto.
 
-* **Versión 1.x – Mejoras de rendimiento y extensibilidad (aprox. +1-3 meses, iterativo):**
+* **Versión 1.x – Mejoras de rendimiento, extensibilidad y seguridad de la cadena de suministro (aprox. +2-4 meses, iterativo):**
 
     * Optimizar rendimiento donde métricas hayan mostrado cuellos: p.ej. activar streaming real en descargas, tuning de thread pools, caching de metadata frecuentes.
     * Implementar caching/proxy de repos externos (por ejemplo, actuar como proxy de Maven Central/npmjs para que las dependencias externas se cacheen localmente). Esto fue mencionado como posible mejora comparando con Nexus. Esto implica nuevas configuraciones de repos tipo *proxy* y manejadores que al no encontrar artefacto local lo busquen en remoto.
+    * **Fase 1 de integración de SBOM y Merkle (MVP):** Implementación básica de generación de SBOM para artefactos Maven y npm, almacenamiento direccionable por contenido y API de verificación simple. Incluirá:
+      * Entidades de dominio básicas (`SbomDocument`, `MerkleNode`, `ContentHash`)
+      * Puertos principales (`SbomRepository`, `ContentAddressableStorage`)
+      * Adaptadores de infraestructura para almacenamiento de SBOM y grafos Merkle
+      * Endpoints REST básicos para generar/recuperar SBOMs
+      * Implementación de verificación de integridad de artefactos mediante hashes
     * Añadir soporte a al menos un nuevo formato de artefacto para probar extensibilidad: candidato popular sería **imágenes Docker (OCI)** o **packages NuGet**. Docker implicaría incorporar un adaptador para el protocolo de registro Docker (JWT auth support, manifest and blob endpoints). Quizá NuGet es más sencillo. Elegir según demanda.
     * Internacionalización de la UI si es relevante (por ejemplo inglés/español).
     * Mejoras de seguridad: integración con LDAP/OAuth if needed by organization, o implementación de 2FA para la UI admin.
     * Feedback de usuarios: por ejemplo, mejorar la usabilidad de la UI (buscador de artefactos más potente, categorías, etiquetas a artefactos, etc.) en función de lo que los usuarios piloto sugieran.
-    * **Objetivo:** Refinar el producto para una adopción más amplia en la organización, cubriendo casos de uso adicionales y asegurando que el rendimiento se mantiene bajo cargas crecientes.
+    * **Objetivo:** Refinar el producto para una adopción más amplia en la organización, cubriendo casos de uso adicionales, mejoras de seguridad de la cadena de suministro y asegurando que el rendimiento se mantiene bajo cargas crecientes.
 
 * **Versión 2.0 – Escalabilidad y características avanzadas (a mediano plazo):**
 
