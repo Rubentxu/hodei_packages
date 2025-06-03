@@ -13,6 +13,7 @@ dependencies {
 
     implementation(libs.postgresql.driver)
     implementation(libs.hikariCP)
+    implementation(libs.kotlinx.coroutines.core) // Added for coroutine support (Dispatchers, withContext)
 
     // Testing
     testImplementation(libs.kotest.runner.junit5) // Note: Original was kotest-runner-junit5-jvm:5.8.0, catalog uses 5.8.1

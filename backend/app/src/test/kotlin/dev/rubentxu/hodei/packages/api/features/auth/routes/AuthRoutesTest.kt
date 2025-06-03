@@ -48,7 +48,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.registerFirstAdmin(any()) } returns
+        coEvery { authService.registerFirstAdmin(io.mockk.any<RegisterAdminCommand>()) } returns
                 Result.success(AuthenticationResult("Admin registered successfully", "admin_token", "admin@example.com", "adminUser"))
 
         val client = createClient {
@@ -131,7 +131,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.registerFirstAdmin(any()) } returns
+        coEvery { authService.registerFirstAdmin(io.mockk.any<RegisterAdminCommand>()) } returns
                 Result.failure(AuthServiceError.AdminAlreadyExists)
 
         val client = createClient {
@@ -166,7 +166,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.login(any()) } returns
+        coEvery { authService.login(io.mockk.any<LoginCommand>()) } returns
                 Result.success(AuthenticationResult("Login successful", "user_token", "user@example.com", "testUser"))
 
         val client = createClient {
@@ -240,7 +240,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.login(any()) } returns
+        coEvery { authService.login(io.mockk.any<LoginCommand>()) } returns
                 Result.failure(AuthServiceError.InvalidCredentials)
 
         val client = createClient {
@@ -274,7 +274,7 @@ class AuthRoutesTest {
             routing { authRoutes(authService) }
         }
 
-        coEvery { authService.login(any()) } returns
+        coEvery { authService.login(io.mockk.any<LoginCommand>()) } returns
                 Result.failure(AuthServiceError.UserNotFound)
 
         val client = createClient {
