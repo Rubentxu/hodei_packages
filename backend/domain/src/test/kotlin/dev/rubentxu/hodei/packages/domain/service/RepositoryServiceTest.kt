@@ -3,6 +3,7 @@ package dev.rubentxu.hodei.packages.domain.service
 import dev.rubentxu.hodei.packages.domain.events.repository.RepositoryEvent
 import dev.rubentxu.hodei.packages.domain.model.repository.Repository
 import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+import dev.rubentxu.hodei.packages.domain.model.repository.StorageType
 import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -91,7 +92,8 @@ class RepositoryServiceTest : StringSpec({
             isPublic = false,
             createdBy = UUID.randomUUID(),
             createdAt = Instant.now().minusSeconds(3600),
-            updatedAt = Instant.now().minusSeconds(3600)
+            updatedAt = Instant.now().minusSeconds(3600),
+            storageType = StorageType.LOCAL
         )
         
         val newDescription = "Updated description"
@@ -149,7 +151,8 @@ class RepositoryServiceTest : StringSpec({
             isPublic = true,
             createdBy = UUID.randomUUID(),
             createdAt = Instant.now().minusSeconds(3600),
-            updatedAt = Instant.now().minusSeconds(3600)
+            updatedAt = Instant.now().minusSeconds(3600),
+            storageType = StorageType.LOCAL
         )
         
         coEvery { repositoryRepository.findById(repoId) } returns existingRepo
@@ -194,7 +197,8 @@ class RepositoryServiceTest : StringSpec({
             isPublic = false,
             createdBy = UUID.randomUUID(),
             createdAt = Instant.now().minusSeconds(3600),
-            updatedAt = Instant.now().minusSeconds(3600)
+            updatedAt = Instant.now().minusSeconds(3600),
+            storageType = StorageType.LOCAL
         )
         
         val newVisibility = true
@@ -229,7 +233,8 @@ class RepositoryServiceTest : StringSpec({
                 isPublic = true,
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
-                updatedAt = Instant.now()
+                updatedAt = Instant.now(),
+                storageType = StorageType.LOCAL
             ),
             Repository(
                 id = UUID.randomUUID(),
@@ -239,7 +244,8 @@ class RepositoryServiceTest : StringSpec({
                 isPublic = false,
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
-                updatedAt = Instant.now()
+                updatedAt = Instant.now(),
+                storageType = StorageType.LOCAL
             )
         )
         
@@ -265,7 +271,8 @@ class RepositoryServiceTest : StringSpec({
             isPublic = true,
             createdBy = UUID.randomUUID(),
             createdAt = Instant.now(),
-            updatedAt = Instant.now()
+            updatedAt = Instant.now(),
+            storageType = StorageType.LOCAL
         )
         
         coEvery { repositoryRepository.findById(repoId) } returns existingRepo

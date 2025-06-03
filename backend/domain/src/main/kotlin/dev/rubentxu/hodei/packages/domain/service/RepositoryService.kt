@@ -3,6 +3,7 @@ package dev.rubentxu.hodei.packages.domain.service
 import dev.rubentxu.hodei.packages.domain.events.repository.RepositoryEvent
 import dev.rubentxu.hodei.packages.domain.model.repository.Repository
 import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+import dev.rubentxu.hodei.packages.domain.model.repository.StorageType
 import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
 import java.time.Instant
 import java.util.UUID
@@ -46,7 +47,8 @@ class RepositoryService(
             createdBy = createdBy,
             createdAt = now,
             updatedAt = now,
-            isPublic = isPublic
+            isPublic = isPublic,
+            storageType =  StorageType.LOCAL
         )
         
         // Persistir el repositorio

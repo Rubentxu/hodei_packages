@@ -4,6 +4,7 @@ import dev.rubentxu.hodei.packages.domain.events.artifact.ArtifactEvent
 import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
 import dev.rubentxu.hodei.packages.domain.model.repository.Repository
 import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+import dev.rubentxu.hodei.packages.domain.model.repository.StorageType
 import dev.rubentxu.hodei.packages.domain.repository.ArtifactRepository
 import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
 import io.kotest.assertions.throwables.shouldThrow
@@ -35,7 +36,8 @@ class ArtifactServiceTest : StringSpec({
         isPublic = true,
         createdBy = userId,
         createdAt = Instant.now().minusSeconds(3600),
-        updatedAt = Instant.now().minusSeconds(3600)
+        updatedAt = Instant.now().minusSeconds(3600),
+        storageType = StorageType.LOCAL
     )
 
     beforeTest {

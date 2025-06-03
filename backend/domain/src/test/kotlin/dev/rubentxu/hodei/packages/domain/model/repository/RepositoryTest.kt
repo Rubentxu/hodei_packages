@@ -20,7 +20,8 @@ class RepositoryTest : StringSpec({
             createdBy = UUID.randomUUID(),
             createdAt = now,
             updatedAt = now,
-            isPublic = true
+            isPublic = true,
+            storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
         )
         
         repository.id shouldBe id
@@ -44,7 +45,8 @@ class RepositoryTest : StringSpec({
             createdBy = UUID.randomUUID(),
             createdAt = now,
             updatedAt = now,
-            isPublic = false
+            isPublic = false,
+            storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
         )
         
         repository.id shouldBe id
@@ -66,7 +68,8 @@ class RepositoryTest : StringSpec({
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
-                isPublic = true
+                isPublic = true,
+                storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
             )
         }
         
@@ -83,7 +86,8 @@ class RepositoryTest : StringSpec({
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
-                isPublic = true
+                isPublic = true,
+                storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
             )
         }
         
@@ -101,7 +105,8 @@ class RepositoryTest : StringSpec({
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
                 updatedAt = Instant.now(),
-                isPublic = true
+                isPublic = true,
+                storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
             )
         }
         
