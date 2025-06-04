@@ -9,5 +9,9 @@ interface TokenService {
      * @param email The email of the user.
      * @return A string representation of the generated token.
      */
-    fun generateToken(userId: String, username: String, email: String): String
+    fun generateToken(
+        userId: String,
+        username: String,
+        email: String,
+    ): String
 }

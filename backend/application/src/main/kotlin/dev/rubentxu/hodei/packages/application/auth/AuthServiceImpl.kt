@@ -1,19 +1,19 @@
 package dev.rubentxu.hodei.packages.application.auth
 
+import dev.rubentxu.hodei.packages.application.security.PasswordHasher
+import dev.rubentxu.hodei.packages.application.security.TokenService
 import dev.rubentxu.hodei.packages.application.shared.Result
 import dev.rubentxu.hodei.packages.domain.model.AdminUser
 import dev.rubentxu.hodei.packages.domain.repository.UserRepository
-import dev.rubentxu.hodei.packages.application.security.PasswordHasher
-import dev.rubentxu.hodei.packages.application.security.TokenService
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.util.UUID
-import kotlinx.coroutines.withContext
 
 class AuthServiceImpl(
     private val userRepository: UserRepository,
     private val passwordHasher: PasswordHasher,
-    private val tokenService: TokenService
+    private val tokenService: TokenService,
 ) : AuthService {
     override suspend fun registerFirstAdmin(command: RegisterAdminCommand): Result<AuthenticationResult, AuthServiceError> {
         // Input Validation
@@ -35,20 +35,24 @@ class AuthServiceImpl(
                     Result.failure(AuthServiceError.AdminAlreadyExists)
                 } else {
                     val hashedPassword = passwordHasher.hash(command.password)
-                    val adminUser = AdminUser(
-                        id = UUID.randomUUID(), // Repository implementation might override or use this
-                        username = command.username,
-                        email = command.email,
-                        hashedPassword = hashedPassword,
-                        isActive = true,
-                        createdAt = Instant.now(),
-                        updatedAt = Instant.now(),
-                        lastAccess = null
-                    )
+                    val adminUser =
+                        AdminUser(
+                            // Repository implementation might override or use this
+                            id = UUID.randomUUID(),
+                            username = command.username,
+                            email = command.email,
+                            hashedPassword = hashedPassword,
+                            isActive = true,
+                            createdAt = Instant.now(),
+                            updatedAt = Instant.now(),
+                            lastAccess = null,
+                        )
                     val savedUser = userRepository.save(adminUser)
                     // AuthenticationResult now includes more details from the saved user
                     val token = tokenService.generateToken(savedUser.id.toString(), savedUser.username, savedUser.email)
-                    Result.success(AuthenticationResult(savedUser.username, savedUser.email, token, "")) // Assuming token generation happens elsewhere or is static for now
+                    Result.success(
+                        AuthenticationResult(savedUser.username, savedUser.email, token, ""),
+                    ) // Assuming token generation happens elsewhere or is static for now
                 }
             }
         } catch (e: Exception) {
@@ -60,8 +64,24 @@ class AuthServiceImpl(
 
     override suspend fun login(command: LoginCommand): Result<AuthenticationResult, AuthServiceError> {
         return withContext(Dispatchers.IO) {
-            // TODO: Implement login logic
-            Result.success(AuthenticationResult("placeholder_user", "placeholder_email@example.com", "mock-token", ""))
+            val user = try {
+                userRepository.findByEmail(command.usernameOrEmail) ?: return@withContext Result.failure(AuthServiceError.InvalidCredentials)
+            } catch (e: Exception) {
+                return@withContext Result.failure(AuthServiceError.UnexpectedError("An unexpected error occurred: ${e.message ?: "Unknown error"}", e))
+            }
+
+            if (!passwordHasher.verify(command.password, user.hashedPassword)) {
+                return@withContext Result.failure(AuthServiceError.InvalidCredentials)
+            }
+
+            val token = try {
+                tokenService.generateToken(user.id.toString(), user.username, user.email)
+            } catch (e: Exception) {
+                return@withContext Result.failure(AuthServiceError.UnexpectedError("An unexpected error occurred: ${e.message ?: "Unknown error"}", e))
+            }
+            Result.success(
+                AuthenticationResult(user.username, user.email, token, ""),
+            )
         }
     }
 }

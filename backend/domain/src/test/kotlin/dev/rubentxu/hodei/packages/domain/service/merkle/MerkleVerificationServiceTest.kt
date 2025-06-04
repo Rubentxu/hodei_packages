@@ -77,7 +77,9 @@ class MerkleVerificationServiceTest : StringSpec({
         // Verificar publicación del evento de verificación exitosa
         val verifiedEventSlot = slot<MerkleGraphVerifiedEvent>()
         coVerify { 
-            mockEventPublisher.publish(capture(verifiedEventSlot)) 
+            mockEventPublisher.publish(
+                capture(verifiedEventSlot)
+            ) 
         }
         
         verifiedEventSlot.captured.artifactId shouldBe artifactId
@@ -101,7 +103,9 @@ class MerkleVerificationServiceTest : StringSpec({
         // Verificar publicación del evento de fallo de verificación
         val failedStructureEventSlot = slot<MerkleVerificationFailedEvent>()
         coVerify { 
-            mockEventPublisher.publish(capture(failedStructureEventSlot)) 
+            mockEventPublisher.publish(
+                capture(failedStructureEventSlot)
+            ) 
         }
         
         failedStructureEventSlot.captured.artifactId shouldBe artifactId
@@ -130,11 +134,13 @@ class MerkleVerificationServiceTest : StringSpec({
         // Verificar publicación del evento de fallo de verificación
         // Usamos un enfoque diferente para evitar conflictos con los slots
         coVerify { 
-            mockEventPublisher.publish(match<MerkleVerificationFailedEvent> { 
-                it.artifactId == artifactId && 
-                it.rootHash == rootNode.contentHash && 
-                it.reason == "Invalid signature"
-            }) 
+            mockEventPublisher.publish(
+                match<MerkleVerificationFailedEvent> { event ->
+                    event.artifactId == artifactId &&
+                        event.rootHash == rootNode.contentHash &&
+                        event.reason == "Invalid signature"
+                }
+            ) 
         }
     }
     
@@ -162,7 +168,9 @@ class MerkleVerificationServiceTest : StringSpec({
         // Verificar publicación del evento de detección de manipulación
         val tamperingEventSlot = slot<TamperingDetectedEvent>()
         coVerify { 
-            mockEventPublisher.publish(capture(tamperingEventSlot)) 
+            mockEventPublisher.publish(
+                capture(tamperingEventSlot)
+            ) 
         }
         
         tamperingEventSlot.captured.artifactId shouldBe artifactId

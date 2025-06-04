@@ -18,5 +18,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.kotest.assertions.core) // Added for Kotest assertions like shouldBe
-    testImplementation(libs.kotest.runner.junit5 ) // Added for Kotest assertions like shouldBe
+    testImplementation(libs.kotest.runner.junit5) // Added for Kotest assertions like shouldBe
 }
+

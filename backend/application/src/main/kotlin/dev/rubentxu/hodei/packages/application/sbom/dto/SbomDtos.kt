@@ -7,27 +7,26 @@ import dev.rubentxu.hodei.packages.domain.model.sbom.SbomRelationship
 import java.time.Instant
 
 /**
- * DTOs para la capa de aplicación relacionados con SBOM.
- * Estos objetos se utilizan para transferir datos entre la capa de aplicación y las interfaces externas.
- */
-
-/**
  * DTO para la entrada de creación de un documento SBOM.
  */
 data class CreateSbomRequest(
     val artifactId: String,
-    val format: String,
+    val format: String, // This is the one that SbomFormat.fromString uses
     val version: String? = null,
     val components: List<SbomComponentDto> = emptyList(),
-    val relationships: List<SbomRelationshipDto> = emptyList()
+    val relationships: List<SbomRelationshipDto> = emptyList(),
 ) {
     fun toSbomDocument(): SbomDocument {
         return SbomDocument(
             artifactId = artifactId,
-            format = SbomFormat.fromString(format),
-            version = version,
+            // The error was: actual type is 'SbomFormat?', but 'SbomFormat' was expected.
+            // If SbomFormat.fromString(format) returns SbomFormat?, then this line is problematic
+            // because SbomDocument expects SbomFormat.
+            // SbomFormat.fromString now returns SbomFormat? so we must handle null.
+            format = SbomFormat.fromString(format) ?: throw IllegalArgumentException("Invalid or unsupported SBOM format string: $format"),
+            version = version ?: "1.0",
             components = components.map { it.toDomainComponent() },
-            relationships = relationships.map { it.toDomainRelationship() }
+            relationships = relationships.map { it.toDomainRelationship() },
         )
     }
 }
@@ -39,36 +38,27 @@ data class SbomComponentDto(
     val name: String,
     val version: String,
     val type: String = "library",
-    val supplier: String? = null,
     val description: String? = null,
-    val license: String? = null,
-    val purl: String? = null,
-    val cpe: String? = null
+    val licenses: List<String> = emptyList(),
 ) {
     fun toDomainComponent(): SbomComponent {
         return SbomComponent(
             name = name,
             version = version,
             type = type,
-            supplier = supplier,
             description = description,
-            license = license,
-            purl = purl,
-            cpe = cpe
+            licenses = licenses,
         )
     }
-    
+
     companion object {
         fun fromDomainComponent(component: SbomComponent): SbomComponentDto {
             return SbomComponentDto(
                 name = component.name,
                 version = component.version,
                 type = component.type,
-                supplier = component.supplier,
                 description = component.description,
-                license = component.license,
-                purl = component.purl,
-                cpe = component.cpe
+                licenses = component.licenses,
             )
         }
     }
@@ -80,22 +70,22 @@ data class SbomComponentDto(
 data class SbomRelationshipDto(
     val fromComponentId: String,
     val toComponentId: String,
-    val type: String
+    val type: String,
 ) {
     fun toDomainRelationship(): SbomRelationship {
         return SbomRelationship(
             fromComponentId = fromComponentId,
             toComponentId = toComponentId,
-            type = type
+            type = type,
         )
     }
-    
+
     companion object {
         fun fromDomainRelationship(relationship: SbomRelationship): SbomRelationshipDto {
             return SbomRelationshipDto(
                 fromComponentId = relationship.fromComponentId,
                 toComponentId = relationship.toComponentId,
-                type = relationship.type
+                type = relationship.type,
             )
         }
     }
@@ -111,40 +101,24 @@ data class SbomDocumentResponse(
     val version: String?,
     val creationTime: Instant,
     val components: List<SbomComponentDto>,
-    val relationships: List<SbomRelationshipDto>
+    val relationships: List<SbomRelationshipDto>,
 ) {
     companion object {
         fun fromDomainDocument(document: SbomDocument): SbomDocumentResponse {
             return SbomDocumentResponse(
                 id = document.id,
                 artifactId = document.artifactId,
-                format = document.format.name,
+                format = document.format.name, // Uses the name of the enum, which is String
                 version = document.version,
                 creationTime = document.creationTime,
                 components = document.components.map { SbomComponentDto.fromDomainComponent(it) },
-                relationships = document.relationships.map { SbomRelationshipDto.fromDomainRelationship(it) }
+                relationships = document.relationships.map { SbomRelationshipDto.fromDomainRelationship(it) },
             )
         }
     }
 }
 
-/**
- * DTO para una solicitud de análisis de SBOM.
- */
-data class SbomAnalysisRequest(
-    val sbomId: String,
-    val analysisType: String = "vulnerability" // vulnerable, license, dependency
-)
-
-/**
- * DTO para la respuesta de un análisis de SBOM.
- */
-data class SbomAnalysisResponse(
-    val sbomId: String,
-    val artifactId: String,
-    val analysisType: String,
-    val analysisDate: Instant,
-    val issuesFound: Int,
-    val severity: String?, // null, low, medium, high, critical
-    val details: Map<String, Any>
-)
+// SbomAnalysisRequest and SbomAnalysisResponse are now defined in their own dedicated files
+// (SbomAnalysisRequest.kt and SbomAnalysisResponse.kt respectively)
+// to prevent redeclaration errors and improve organization.
+// SbomAnalysisResponse.kt also contains VulnerabilityDto and LicenseComplianceDto.

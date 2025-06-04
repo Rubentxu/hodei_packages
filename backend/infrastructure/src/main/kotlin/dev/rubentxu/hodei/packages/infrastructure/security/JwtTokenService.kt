@@ -13,8 +13,15 @@ class JwtTokenService(
 ) : TokenService {
 
     override fun generateToken(userId: String, username: String, email: String): String {
-        // TODO: Implement actual token generation
-        throw NotImplementedError("Token generation is not yet implemented.")
+        return JWT.create()
+            .withAudience(audience)
+            .withIssuer(issuer)
+            .withSubject(userId)
+            .withClaim("username", username)
+            .withClaim("email", email)
+            .withIssuedAt(Date())
+            .withExpiresAt(Date(System.currentTimeMillis() + expirationTimeMillis))
+            .sign(Algorithm.HMAC256(secret))
     }
 
     // TODO: Add methods for token validation if needed as part of this service

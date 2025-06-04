@@ -53,4 +53,12 @@ interface ArtifactStoragePort {
      * @return The relative storage path as a String.
      */
     fun getStoragePath(artifact: Artifact): String
+
+    /**
+     * Retrieves the binary content of an artifact by its ID.
+     *
+     * @param artifactId The ID of the artifact to retrieve.
+     * @return A Result containing the artifact's binary data as ByteArray?, or an exception if retrieval failed.
+     */
+    suspend fun retrieveArtifactContent(artifactId: String): Result<ByteArray?>
 }

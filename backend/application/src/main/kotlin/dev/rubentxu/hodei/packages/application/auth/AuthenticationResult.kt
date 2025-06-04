@@ -4,5 +4,5 @@ data class AuthenticationResult(
     val username: String,
     val email: String,
     val token: String,
-    val message: String
+    val message: String,
 )

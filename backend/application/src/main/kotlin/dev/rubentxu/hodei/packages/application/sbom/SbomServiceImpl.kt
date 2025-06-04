@@ -9,6 +9,9 @@ import dev.rubentxu.hodei.packages.domain.model.sbom.SbomFormat
 import dev.rubentxu.hodei.packages.domain.repository.ArtifactStoragePort
 import dev.rubentxu.hodei.packages.domain.repository.sbom.SbomRepository
 import dev.rubentxu.hodei.packages.domain.service.sbom.SbomGenerator
+import dev.rubentxu.hodei.packages.domain.service.sbom.SbomAnalyzerPort // Added import
+import dev.rubentxu.hodei.packages.application.sbom.dto.VulnerabilityDto // Added import
+import dev.rubentxu.hodei.packages.application.sbom.dto.LicenseComplianceDto // Added import
 import java.time.Instant
 
 /**
@@ -20,18 +23,18 @@ class SbomServiceImpl(
     private val sbomRepository: SbomRepository,
     private val sbomGenerator: SbomGenerator,
     private val eventPublisher: EventPublisher,
-    private val artifactStorage: ArtifactStoragePort
+    private val artifactStorage: ArtifactStoragePort,
+    private val sbomAnalyzerPort: SbomAnalyzerPort, // Added SbomAnalyzerPort
 ) : SbomService {
-
     /**
      * Crea un nuevo documento SBOM a partir de la información proporcionada.
      */
     override suspend fun createSbom(request: CreateSbomRequest): Result<SbomDocumentResponse> {
         return try {
             val sbomDocument = request.toSbomDocument()
-            
+
             val result = sbomRepository.save(sbomDocument)
-            
+
             result.map { document ->
                 SbomDocumentResponse.fromDomainDocument(document)
             }
@@ -43,29 +46,33 @@ class SbomServiceImpl(
     /**
      * Genera un documento SBOM a partir del contenido de un artefacto.
      */
-    override suspend fun generateSbomFromArtifact(artifactId: String, format: String): Result<SbomDocumentResponse> {
+    override suspend fun generateSbomFromArtifact(
+        artifactId: String,
+        format: String,
+    ): Result<SbomDocumentResponse> {
         return try {
             // Obtener el contenido del artefacto
-            val contentResult = artifactStorage.getArtifactContent(artifactId)
-            
+            val contentResult = artifactStorage.retrieveArtifactContent(artifactId)
+
             if (contentResult.isFailure) {
                 return Result.failure(
-                    contentResult.exceptionOrNull() ?: 
-                    IllegalStateException("Failed to retrieve artifact content")
+                    contentResult.exceptionOrNull()
+                        ?: IllegalStateException("Failed to retrieve artifact content"),
                 )
             }
-            
+
             val content = contentResult.getOrNull()
             if (content == null) {
                 return Result.failure(IllegalStateException("No content available for artifact $artifactId"))
             }
-            
+
             // Convertir el formato de string a enum
-            val sbomFormat = SbomFormat.fromString(format)
-            
+            val sbomFormatEnum = SbomFormat.fromString(format)
+                ?: return Result.failure(IllegalArgumentException("Invalid or unsupported SBOM format string: $format"))
+
             // Generar el SBOM
-            val generationResult = sbomGenerator.generateSbom(artifactId, content, sbomFormat)
-            
+            val generationResult = sbomGenerator.generateSbom(artifactId, content, sbomFormatEnum)
+
             generationResult.map { document ->
                 SbomDocumentResponse.fromDomainDocument(document)
             }
@@ -80,9 +87,13 @@ class SbomServiceImpl(
     override suspend fun getSbomById(sbomId: String): Result<SbomDocumentResponse> {
         return try {
             val result = sbomRepository.findById(sbomId)
-            
+
             result.map { document ->
-                SbomDocumentResponse.fromDomainDocument(document)
+                if (document != null) {
+                    SbomDocumentResponse.fromDomainDocument(document)
+                } else {
+                    throw NoSuchElementException("SBOM document with ID $sbomId not found")
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -95,7 +106,7 @@ class SbomServiceImpl(
     override suspend fun getSbomsByArtifactId(artifactId: String): Result<List<SbomDocumentResponse>> {
         return try {
             val result = sbomRepository.findByArtifactId(artifactId)
-            
+
             result.map { documents ->
                 documents.map { SbomDocumentResponse.fromDomainDocument(it) }
             }
@@ -110,9 +121,13 @@ class SbomServiceImpl(
     override suspend fun getLatestSbomByArtifactId(artifactId: String): Result<SbomDocumentResponse> {
         return try {
             val result = sbomRepository.findLatestByArtifactId(artifactId)
-            
+
             result.map { document ->
-                SbomDocumentResponse.fromDomainDocument(document)
+                if (document != null) {
+                    SbomDocumentResponse.fromDomainDocument(document)
+                } else {
+                    throw NoSuchElementException("Latest SBOM document for artifact ID $artifactId not found")
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -124,11 +139,11 @@ class SbomServiceImpl(
      */
     override suspend fun findSbomsByComponent(
         componentName: String,
-        componentVersion: String?
+        componentVersion: String?,
     ): Result<List<SbomDocumentResponse>> {
         return try {
             val result = sbomRepository.findByComponent(componentName, componentVersion)
-            
+
             result.map { documents ->
                 documents.map { SbomDocumentResponse.fromDomainDocument(it) }
             }
@@ -146,35 +161,53 @@ class SbomServiceImpl(
         return try {
             // Obtener el documento SBOM
             val sbomResult = sbomRepository.findById(request.sbomId)
-            
+
             if (sbomResult.isFailure) {
                 return Result.failure(
-                    sbomResult.exceptionOrNull() ?: 
-                    IllegalStateException("Failed to retrieve SBOM document")
+                    sbomResult.exceptionOrNull()
+                        ?: IllegalStateException("Failed to retrieve SBOM document"),
                 )
             }
-            
+
             val sbomDocument = sbomResult.getOrNull()
             if (sbomDocument == null) {
                 return Result.failure(IllegalArgumentException("SBOM document with ID ${request.sbomId} not found"))
             }
-            
-            // En una implementación real, aquí se integraría con un servicio externo
-            // de análisis de vulnerabilidades, licencias, etc.
-            // Por ahora, devolvemos un ejemplo de respuesta
+
+            // Realizar el análisis utilizando SbomAnalyzerPort
+            val domainAnalysisResult = sbomAnalyzerPort.performAnalysis(sbomDocument, request.analysisTypes)
+
+            if (domainAnalysisResult.isFailure) {
+                return Result.failure(
+                    domainAnalysisResult.exceptionOrNull() ?: IllegalStateException("Failed to perform SBOM analysis")
+                )
+            }
+
+            val actualDomainAnalysis = domainAnalysisResult.getOrNull()
+                ?: return Result.failure(IllegalStateException("SBOM analysis returned no result despite success"))
+
+            // Mapear el resultado del dominio al DTO de respuesta
             val response = SbomAnalysisResponse(
                 sbomId = request.sbomId,
-                artifactId = sbomDocument.artifactId,
-                analysisType = request.analysisType,
-                analysisDate = Instant.now(),
-                issuesFound = 0,  // En una implementación real, esto vendría del análisis
-                severity = null,  // En una implementación real, esto vendría del análisis
-                details = mapOf(
-                    "message" to "Analysis not implemented yet",
-                    "componentsAnalyzed" to sbomDocument.components.size
-                )
+                analysisTimestamp = actualDomainAnalysis.analysisTimestamp,
+                vulnerabilities = actualDomainAnalysis.vulnerabilities.map { dv ->
+                    VulnerabilityDto(
+                        id = dv.id,
+                        severity = dv.severity,
+                        description = dv.description,
+                        componentName = dv.componentName,
+                        componentVersion = dv.componentVersion
+                    )
+                },
+                licenseCompliance = actualDomainAnalysis.licenseCompliance?.let { dl ->
+                    LicenseComplianceDto(
+                        status = dl.status,
+                        issues = dl.issues
+                    )
+                },
+                analysisSummary = actualDomainAnalysis.summary
             )
-            
+
             Result.success(response)
         } catch (e: Exception) {
             Result.failure(e)
