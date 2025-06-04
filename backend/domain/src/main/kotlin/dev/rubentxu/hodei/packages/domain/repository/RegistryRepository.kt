@@ -1,7 +1,9 @@
 package dev.rubentxu.hodei.packages.domain.repository
 
-import dev.rubentxu.hodei.packages.domain.model.repository.Repository
-import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+
+import dev.rubentxu.hodei.packages.domain.model.registry.ArtifactRegistry
+import dev.rubentxu.hodei.packages.domain.model.registry.RegistryType
+
 import java.util.UUID
 
 /**
@@ -11,31 +13,31 @@ import java.util.UUID
 interface RepositoryRepository {
     /**
      * Guarda un nuevo repositorio o actualiza uno existente.
-     * @param repository El repositorio a guardar
+     * @param registry El repositorio a guardar
      * @return El repositorio guardado con posibles modificaciones (ej. ID generado)
      */
-    suspend fun save(repository: Repository): Repository
+    suspend fun save(registry: ArtifactRegistry): ArtifactRegistry
     
     /**
      * Busca un repositorio por su ID.
      * @param id ID del repositorio
      * @return El repositorio si existe, null en caso contrario
      */
-    suspend fun findById(id: UUID): Repository?
+    suspend fun findById(id: UUID): ArtifactRegistry?
     
     /**
      * Busca un repositorio por su nombre.
      * @param name Nombre del repositorio
      * @return El repositorio si existe, null en caso contrario
      */
-    suspend fun findByName(name: String): Repository?
+    suspend fun findByName(name: String): ArtifactRegistry?
     
     /**
      * Obtiene todos los repositorios del sistema.
      * @param type Tipo opcional de repositorio para filtrar (MAVEN, NPM)
      * @return Lista de repositorios
      */
-    suspend fun findAll(type: RepositoryType? = null): List<Repository>
+    suspend fun findAll(type: RegistryType? = null): List<ArtifactRegistry>
     
     /**
      * Verifica si existe un repositorio con el nombre dado.

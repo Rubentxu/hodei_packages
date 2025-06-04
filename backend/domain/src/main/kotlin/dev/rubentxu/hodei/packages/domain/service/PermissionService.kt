@@ -5,7 +5,7 @@ import dev.rubentxu.hodei.packages.domain.model.permission.Permission
 import dev.rubentxu.hodei.packages.domain.model.permission.Role
 import dev.rubentxu.hodei.packages.domain.model.permission.UserPermission
 import dev.rubentxu.hodei.packages.domain.repository.PermissionRepository
-import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
+import dev.rubentxu.hodei.packages.domain.repository.ArtifactRegistryRepository
 import java.time.Instant
 import java.util.UUID
 
@@ -15,7 +15,7 @@ import java.util.UUID
  */
 class PermissionService(
     private val permissionRepository: PermissionRepository,
-    private val repositoryRepository: RepositoryRepository,
+    private val repositoryRepository: ArtifactRegistryRepository,
     private val eventPublisher: (PermissionEvent) -> Unit
 ) {
     /**
@@ -270,7 +270,7 @@ class PermissionService(
         
         // Verificar que el repositorio existe
         val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("Repository with ID '$repositoryId' not found")
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
         
         val userPermission = UserPermission.createRepositoryPermission(
             userId = userId,

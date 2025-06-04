@@ -2,10 +2,10 @@ package dev.rubentxu.hodei.packages.domain.service
 
 import dev.rubentxu.hodei.packages.domain.events.artifact.ArtifactEvent
 import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
-import dev.rubentxu.hodei.packages.domain.model.repository.Repository
+import dev.rubentxu.hodei.packages.domain.model.repository.ArtifactRegistry
 import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
 import dev.rubentxu.hodei.packages.domain.repository.ArtifactRepository
-import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
+import dev.rubentxu.hodei.packages.domain.repository.ArtifactRegistryRepository
 import java.time.Instant
 import java.util.UUID
 
@@ -15,7 +15,7 @@ import java.util.UUID
  */
 class ArtifactService(
     private val artifactRepository: ArtifactRepository,
-    private val repositoryRepository: RepositoryRepository,
+    private val repositoryRepository: ArtifactRegistryRepository,
     private val eventPublisher: (ArtifactEvent) -> Unit
 ) {
     /**
@@ -44,7 +44,7 @@ class ArtifactService(
     ): Artifact {
         // Verificar que el repositorio existe
         val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("Repository with ID '$repositoryId' not found")
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
         
         // Verificar si ya existe un artefacto con las mismas coordenadas
         val existingArtifact = artifactRepository.findByCoordinates(
@@ -55,7 +55,7 @@ class ArtifactService(
         )
         
         if (existingArtifact != null) {
-            throw IllegalStateException("Artifact $groupId:$artifactId:$version already exists in repository ${repository.name}")
+            throw IllegalStateException("Artifact $groupId:$artifactId:$version already exists in artifact registry ${repository.name}")
         }
         
         val now = Instant.now()
@@ -217,7 +217,7 @@ class ArtifactService(
     suspend fun findArtifactsByRepository(repositoryId: UUID): List<Artifact> {
         // Verificar que el repositorio existe
         val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("Repository with ID '$repositoryId' not found")
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
         
         return artifactRepository.findByRepositoryId(repositoryId)
     }
@@ -237,7 +237,7 @@ class ArtifactService(
     ): List<Artifact> {
         // Verificar que el repositorio existe
         val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("Repository with ID '$repositoryId' not found")
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
         
         return artifactRepository.findAllVersions(
             repositoryId = repositoryId,
@@ -263,7 +263,7 @@ class ArtifactService(
     ): Artifact? {
         // Verificar que el repositorio existe
         val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("Repository with ID '$repositoryId' not found")
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
         
         return artifactRepository.findByCoordinates(
             repositoryId = repositoryId,

@@ -1,15 +1,14 @@
 package dev.rubentxu.hodei.packages.domain.service
 
-import dev.rubentxu.hodei.packages.domain.events.repository.RepositoryEvent
-import dev.rubentxu.hodei.packages.domain.model.repository.Repository
-import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
-import dev.rubentxu.hodei.packages.domain.model.repository.StorageType
-import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
+import dev.rubentxu.hodei.packages.domain.events.registry.ArtifactRegistryEvent
+import dev.rubentxu.hodei.packages.domain.model.registry.Registry
+import dev.rubentxu.hodei.packages.domain.model.registry.RegistryType
+import dev.rubentxu.hodei.packages.domain.model.registry.StorageType
+import dev.rubentxu.hodei.packages.domain.repository.RegistryRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.*
-import io.mockk.impl.annotations.MockK
 import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
@@ -17,26 +16,26 @@ import kotlinx.coroutines.test.runTest
 class RepositoryServiceTest : StringSpec({
     
     // Configuración común
-    lateinit var repositoryRepository: RepositoryRepository
-    lateinit var eventPublisher: (RepositoryEvent) -> Unit
+    lateinit var registryRepository: RegistryRepository
+    lateinit var eventPublisher: (ArtifactRegistryEvent) -> Unit
     lateinit var repositoryService: RepositoryService
     
     beforeTest {
-        repositoryRepository = mockk()
+        registryRepository = mockk()
         eventPublisher = mockk(relaxed = true)
-        repositoryService = RepositoryService(repositoryRepository, eventPublisher)
+        repositoryService = RepositoryService(registryRepository, eventPublisher)
     }
     
     "createRepository should create and persist a new repository" { runTest {
         // Arrange
         val name = "test-repo"
-        val type = RepositoryType.MAVEN
+        val type = RegistryType.MAVEN
         val description = "Test repository"
         val isPublic = true
         val createdBy = UUID.randomUUID()
         
-        coEvery { repositoryRepository.existsByName(name) } returns false
-        coEvery { repositoryRepository.save(any()) } answers { firstArg() }
+        coEvery { registryRepository.existsByName(name) } returns false
+        coEvery { registryRepository.save(any()) } answers { firstArg() }
         
         // Act
         val result = repositoryService.createRepository(
@@ -54,29 +53,29 @@ class RepositoryServiceTest : StringSpec({
         result.isPublic shouldBe isPublic
         result.createdBy shouldBe createdBy
         
-        coVerify { repositoryRepository.existsByName(name) }
-        coVerify { repositoryRepository.save(any()) }
-        verify { eventPublisher(match { it is RepositoryEvent.RepositoryCreated }) }
+        coVerify { registryRepository.existsByName(name) }
+        coVerify { registryRepository.save(any()) }
+        verify { eventPublisher(match { it is ArtifactRegistryEvent.ArtifactRegistryCreated }) }
     } }
     
     "createRepository should throw exception when repository name already exists" { runTest {
         // Arrange
         val name = "existing-repo"
-        coEvery { repositoryRepository.existsByName(name) } returns true
+        coEvery { registryRepository.existsByName(name) } returns true
         
         // Act & Assert
         shouldThrow<IllegalStateException> {
             repositoryService.createRepository(
                 name = name,
-                type = RepositoryType.NPM,
+                type = RegistryType.NPM,
                 description = "This should fail",
                 isPublic = true,
                 createdBy = UUID.randomUUID()
             )
         }.message shouldBe "A repository with name '$name' already exists"
         
-        coVerify { repositoryRepository.existsByName(name) }
-        coVerify(exactly = 0) { repositoryRepository.save(any()) }
+        coVerify { registryRepository.existsByName(name) }
+        coVerify(exactly = 0) { registryRepository.save(any()) }
         verify(exactly = 0) { eventPublisher(any()) }
     } }
     
@@ -84,10 +83,10 @@ class RepositoryServiceTest : StringSpec({
         // Arrange
         val repoId = UUID.randomUUID()
         val updatedBy = UUID.randomUUID()
-        val existingRepo = Repository(
+        val existingRepo = Registry(
             id = repoId,
             name = "test-repo",
-            type = RepositoryType.MAVEN,
+            type = RegistryType.MAVEN,
             description = "Original description",
             isPublic = false,
             createdBy = UUID.randomUUID(),
@@ -99,8 +98,8 @@ class RepositoryServiceTest : StringSpec({
         val newDescription = "Updated description"
         val newIsPublic = true
         
-        coEvery { repositoryRepository.findById(repoId) } returns existingRepo
-        coEvery { repositoryRepository.save(any()) } answers { firstArg() }
+        coEvery { registryRepository.findById(repoId) } returns existingRepo
+        coEvery { registryRepository.save(any()) } answers { firstArg() }
         
         // Act
         val result = repositoryService.updateRepository(
@@ -115,15 +114,15 @@ class RepositoryServiceTest : StringSpec({
         result.description shouldBe newDescription
         result.isPublic shouldBe newIsPublic
         
-        coVerify { repositoryRepository.findById(repoId) }
-        coVerify { repositoryRepository.save(any()) }
-        verify { eventPublisher(match { it is RepositoryEvent.RepositoryUpdated }) }
+        coVerify { registryRepository.findById(repoId) }
+        coVerify { registryRepository.save(any()) }
+        verify { eventPublisher(match { it is ArtifactRegistryEvent.ArtifactRegistryUpdated }) }
     } }
     
     "updateRepository should throw exception when repository doesn't exist" { runTest {
         // Arrange
         val repoId = UUID.randomUUID()
-        coEvery { repositoryRepository.findById(repoId) } returns null
+        coEvery { registryRepository.findById(repoId) } returns null
         
         // Act & Assert
         shouldThrow<IllegalArgumentException> {
@@ -134,8 +133,8 @@ class RepositoryServiceTest : StringSpec({
             )
         }.message shouldBe "Repository with ID '$repoId' not found"
         
-        coVerify { repositoryRepository.findById(repoId) }
-        coVerify(exactly = 0) { repositoryRepository.save(any()) }
+        coVerify { registryRepository.findById(repoId) }
+        coVerify(exactly = 0) { registryRepository.save(any()) }
         verify(exactly = 0) { eventPublisher(any()) }
     } }
     
@@ -143,10 +142,10 @@ class RepositoryServiceTest : StringSpec({
         // Arrange
         val repoId = UUID.randomUUID()
         val deletedBy = UUID.randomUUID()
-        val existingRepo = Repository(
+        val existingRepo = Registry(
             id = repoId,
             name = "repo-to-delete",
-            type = RepositoryType.NPM,
+            type = RegistryType.NPM,
             description = "Will be deleted",
             isPublic = true,
             createdBy = UUID.randomUUID(),
@@ -155,8 +154,8 @@ class RepositoryServiceTest : StringSpec({
             storageType = StorageType.LOCAL
         )
         
-        coEvery { repositoryRepository.findById(repoId) } returns existingRepo
-        coEvery { repositoryRepository.deleteById(repoId) } returns true
+        coEvery { registryRepository.findById(repoId) } returns existingRepo
+        coEvery { registryRepository.deleteById(repoId) } returns true
         
         // Act
         val result = repositoryService.deleteRepository(repoId, deletedBy)
@@ -164,15 +163,15 @@ class RepositoryServiceTest : StringSpec({
         // Assert
         result shouldBe true
         
-        coVerify { repositoryRepository.findById(repoId) }
-        coVerify { repositoryRepository.deleteById(repoId) }
-        verify { eventPublisher(match { it is RepositoryEvent.RepositoryDeleted }) }
+        coVerify { registryRepository.findById(repoId) }
+        coVerify { registryRepository.deleteById(repoId) }
+        verify { eventPublisher(match { it is ArtifactRegistryEvent.ArtifactRegistryDeleted }) }
     } }
     
     "deleteRepository should return false when repository doesn't exist" { runTest {
         // Arrange
         val repoId = UUID.randomUUID()
-        coEvery { repositoryRepository.findById(repoId) } returns null
+        coEvery { registryRepository.findById(repoId) } returns null
         
         // Act
         val result = repositoryService.deleteRepository(repoId, UUID.randomUUID())
@@ -180,8 +179,8 @@ class RepositoryServiceTest : StringSpec({
         // Assert
         result shouldBe false
         
-        coVerify { repositoryRepository.findById(repoId) }
-        coVerify(exactly = 0) { repositoryRepository.deleteById(any()) }
+        coVerify { registryRepository.findById(repoId) }
+        coVerify(exactly = 0) { registryRepository.deleteById(any()) }
         coVerify(exactly = 0) { eventPublisher(any()) }
     } }
     
@@ -189,10 +188,10 @@ class RepositoryServiceTest : StringSpec({
         // Arrange
         val repoId = UUID.randomUUID()
         val updatedBy = UUID.randomUUID()
-        val existingRepo = Repository(
+        val existingRepo = Registry(
             id = repoId,
             name = "test-repo",
-            type = RepositoryType.MAVEN,
+            type = RegistryType.MAVEN,
             description = "Test repository",
             isPublic = false,
             createdBy = UUID.randomUUID(),
@@ -203,8 +202,8 @@ class RepositoryServiceTest : StringSpec({
         
         val newVisibility = true
         
-        coEvery { repositoryRepository.findById(repoId) } returns existingRepo
-        coEvery { repositoryRepository.save(any()) } answers { firstArg() }
+        coEvery { registryRepository.findById(repoId) } returns existingRepo
+        coEvery { registryRepository.save(any()) } answers { firstArg() }
         
         // Act
         val result = repositoryService.changeRepositoryVisibility(
@@ -216,19 +215,19 @@ class RepositoryServiceTest : StringSpec({
         // Assert
         result.isPublic shouldBe newVisibility
         
-        coVerify { repositoryRepository.findById(repoId) }
-        coVerify { repositoryRepository.save(any()) }
-        verify { eventPublisher(match { it is RepositoryEvent.RepositoryAccessChanged }) }
+        coVerify { registryRepository.findById(repoId) }
+        coVerify { registryRepository.save(any()) }
+        verify { eventPublisher(match { it is ArtifactRegistryEvent.ArtifactRegistryAccessChanged }) }
     } }
     
     "findRepositories should return filtered repositories" { runTest {
         // Arrange
-        val type = RepositoryType.MAVEN
+        val type = RegistryType.MAVEN
         val repos = listOf(
-            Repository(
+            Registry(
                 id = UUID.randomUUID(),
                 name = "maven-repo-1",
-                type = RepositoryType.MAVEN,
+                type = RegistryType.MAVEN,
                 description = "Maven repository 1",
                 isPublic = true,
                 createdBy = UUID.randomUUID(),
@@ -236,10 +235,10 @@ class RepositoryServiceTest : StringSpec({
                 updatedAt = Instant.now(),
                 storageType = StorageType.LOCAL
             ),
-            Repository(
+            Registry(
                 id = UUID.randomUUID(),
                 name = "maven-repo-2",
-                type = RepositoryType.MAVEN,
+                type = RegistryType.MAVEN,
                 description = "Maven repository 2",
                 isPublic = false,
                 createdBy = UUID.randomUUID(),
@@ -249,7 +248,7 @@ class RepositoryServiceTest : StringSpec({
             )
         )
         
-        coEvery { repositoryRepository.findAll(type) } returns repos
+        coEvery { registryRepository.findAll(type) } returns repos
         
         // Act
         val result = repositoryService.findRepositories(type)
@@ -257,16 +256,16 @@ class RepositoryServiceTest : StringSpec({
         // Assert
         result shouldBe repos
         
-        coVerify { repositoryRepository.findAll(type) }
+        coVerify { registryRepository.findAll(type) }
     } }
     
     "findRepositoryById should return repository when exists" { runTest {
         // Arrange
         val repoId = UUID.randomUUID()
-        val existingRepo = Repository(
+        val existingRepo = Registry(
             id = repoId,
             name = "test-repo",
-            type = RepositoryType.NPM,
+            type = RegistryType.NPM,
             description = "Test repository",
             isPublic = true,
             createdBy = UUID.randomUUID(),
@@ -275,7 +274,7 @@ class RepositoryServiceTest : StringSpec({
             storageType = StorageType.LOCAL
         )
         
-        coEvery { repositoryRepository.findById(repoId) } returns existingRepo
+        coEvery { registryRepository.findById(repoId) } returns existingRepo
         
         // Act
         val result = repositoryService.findRepositoryById(repoId)
@@ -283,14 +282,14 @@ class RepositoryServiceTest : StringSpec({
         // Assert
         result shouldBe existingRepo
         
-        coVerify { repositoryRepository.findById(repoId) }
+        coVerify { registryRepository.findById(repoId) }
     } }
     
     "findRepositoryById should return null when repository doesn't exist" { runTest {
         // Arrange
         val repoId = UUID.randomUUID()
         
-        coEvery { repositoryRepository.findById(repoId) } returns null
+        coEvery { registryRepository.findById(repoId) } returns null
         
         // Act
         val result = repositoryService.findRepositoryById(repoId)
@@ -298,6 +297,6 @@ class RepositoryServiceTest : StringSpec({
         // Assert
         result shouldBe null
         
-        coVerify { repositoryRepository.findById(repoId) }
+        coVerify { registryRepository.findById(repoId) }
     } }
 })

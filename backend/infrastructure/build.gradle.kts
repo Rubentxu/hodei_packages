@@ -14,6 +14,9 @@ dependencies {
     implementation(libs.hikariCP)
     implementation(libs.kotlinx.coroutines.core) // Added for coroutine support (Dispatchers, withContext)
 
+    // JWT - Auth0
+    implementation("com.auth0:java-jwt:4.4.0")
+
     // Testing
     testImplementation(kotlin("test-junit5"))
     testImplementation(libs.kotest.runner.junit5) // Note: Original was kotest-runner-junit5-jvm:5.8.0, catalog uses 5.8.1
