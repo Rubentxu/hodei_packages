@@ -7,7 +7,7 @@ import java.util.UUID
  * Representa un registro de artefactos en el sistema.
  * Un registro de artefactos es un contenedor lógico para artefactos de un tipo específico (Maven, NPM).
  */
-data class ArtifactRegistry(
+data class Registry(
     val id: UUID,
     val name: String,
     val type: RegistryType, // Se mantiene RepositoryType, ya que define el TIPO del registro (Maven, NPM, etc.)

@@ -5,7 +5,7 @@ import dev.rubentxu.hodei.packages.domain.model.permission.Permission
 import dev.rubentxu.hodei.packages.domain.model.permission.Role
 import dev.rubentxu.hodei.packages.domain.model.permission.UserPermission
 import dev.rubentxu.hodei.packages.domain.repository.PermissionRepository
-import dev.rubentxu.hodei.packages.domain.repository.ArtifactRegistryRepository
+import dev.rubentxu.hodei.packages.domain.repository.RegistryRepository
 import java.time.Instant
 import java.util.UUID
 
@@ -15,7 +15,7 @@ import java.util.UUID
  */
 class PermissionService(
     private val permissionRepository: PermissionRepository,
-    private val repositoryRepository: ArtifactRegistryRepository,
+    private val registryRepository: RegistryRepository,
     private val eventPublisher: (PermissionEvent) -> Unit
 ) {
     /**
@@ -213,7 +213,7 @@ class PermissionService(
                 id = UUID.randomUUID(),
                 userId = userId,
                 roleId = roleId,
-                repositoryId = null, // Global permission
+                registryId = null, // Global permission
                 grantedBy = grantedBy,
                 grantedAt = Instant.now(),
                 expiresAt = expiresAt
@@ -269,7 +269,7 @@ class PermissionService(
             ?: throw IllegalArgumentException("Role with ID '$roleId' not found")
         
         // Verificar que el repositorio existe
-        val repository = repositoryRepository.findById(repositoryId)
+        val repository = registryRepository.findById(repositoryId)
             ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
         
         val userPermission = UserPermission.createRepositoryPermission(
@@ -290,7 +290,7 @@ class PermissionService(
                 userId = savedPermission.userId,
                 roleId = savedPermission.roleId,
                 roleName = role.name,
-                repositoryId = savedPermission.repositoryId,
+                repositoryId = savedPermission.registryId,
                 repositoryName = repository?.name,
                 grantedBy = savedPermission.grantedBy,
                 expiresAt = savedPermission.expiresAt,
@@ -319,8 +319,8 @@ class PermissionService(
         
         if (revoked) {
             // Obtener el nombre del repositorio si existe
-            val repositoryName = permission.repositoryId?.let { repoId ->
-                repositoryRepository.findById(repoId)?.name
+            val repositoryName = permission.registryId?.let { repoId ->
+                registryRepository.findById(repoId)?.name
             }
             // Publicar evento de revocación
             eventPublisher(
@@ -329,7 +329,7 @@ class PermissionService(
                     userId = permission.userId,
                     roleId = permission.roleId,
                     roleName = role.name,
-                    repositoryId = permission.repositoryId,
+                    repositoryId = permission.registryId,
                     repositoryName = repositoryName,
                     revokedBy = revokedBy,
                     timestamp = Instant.now()
@@ -386,7 +386,7 @@ class PermissionService(
                     permissionId = savedPermission.id,
                     userId = savedPermission.userId,
                     roleId = savedPermission.roleId,
-                    repositoryId = savedPermission.repositoryId,
+                    repositoryId = savedPermission.registryId,
                     newExpiresAt = savedPermission.expiresAt,
                     updatedBy = updatedBy,
                     timestamp = Instant.now()
@@ -416,7 +416,7 @@ class PermissionService(
         
         // Verificar permisos globales primero
         val hasGlobalPermission = userPermissions
-            .filter { it.repositoryId == null } // Solo permisos globales
+            .filter { it.registryId == null } // Solo permisos globales
             .any { userPermission ->
                 // Obtener los permisos del rol asociado
                 val role = permissionRepository.findRoleById(userPermission.roleId)
@@ -430,7 +430,7 @@ class PermissionService(
         // Si se especifica un repositorio, verificar permisos específicos
         if (repositoryId != null) {
             return userPermissions
-                .filter { it.repositoryId == null || it.repositoryId == repositoryId }
+                .filter { it.registryId == null || it.registryId == repositoryId }
                 .any { userPermission ->
                     // Obtener los permisos del rol asociado
                     val role = permissionRepository.findRoleById(userPermission.roleId)
@@ -469,7 +469,7 @@ class PermissionService(
         if (userId != null) {
             val userPermissions = permissionRepository.findPermissionsByUserId(userId, activeOnly)
             result.addAll(userPermissions.filter { permission ->
-                (repositoryId == null || permission.repositoryId == repositoryId) &&
+                (repositoryId == null || permission.registryId == repositoryId) &&
                 (roleId == null || permission.roleId == roleId)
             })
         } 

@@ -13,7 +13,7 @@ sealed class ArtifactEvent {
      */
     data class ArtifactUploaded(
         val artifactId: UUID,
-        val repositoryId: UUID,
+        val registryId: UUID,
         val groupId: String,
         val artifactName: String,
         val version: String,
@@ -27,7 +27,7 @@ sealed class ArtifactEvent {
      */
     data class ArtifactDownloaded(
         val artifactId: UUID,
-        val repositoryId: UUID,
+        val registryId: UUID,
         val groupId: String,
         val artifactName: String,
         val version: String,
@@ -42,7 +42,7 @@ sealed class ArtifactEvent {
      */
     data class ArtifactDeleted(
         val artifactId: UUID,
-        val repositoryId: UUID,
+        val registryId: UUID,
         val groupId: String,
         val artifactName: String,
         val version: String,
@@ -55,7 +55,7 @@ sealed class ArtifactEvent {
      */
     data class ArtifactMetadataUpdated(
         val artifactId: UUID,
-        val repositoryId: UUID,
+        val registryId: UUID,
         val groupId: String,
         val artifactName: String,
         val version: String,

@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.domain.model.artifact
 
-import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+import dev.rubentxu.hodei.packages.domain.model.registry.RegistryType
 import java.time.Instant
 import java.util.UUID
 
@@ -10,11 +10,11 @@ import java.util.UUID
  */
 data class Artifact(
     val id: UUID,
-    val repositoryId: UUID,
+    val registryId: UUID,
     val groupId: String,
     val artifactId: String,
     val version: String,
-    val repositoryType: RepositoryType,
+    val registryType: RegistryType,
     val fileSize: Long,
     val sha256: String,
     val createdBy: UUID,
@@ -68,11 +68,11 @@ data class Artifact(
         ): Artifact {
             return Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = original.repositoryId,
+                registryId = original.registryId,
                 groupId = original.groupId,
                 artifactId = original.artifactId,
                 version = newVersion,
-                repositoryType = original.repositoryType,
+                registryType = original.registryType,
                 fileSize = newFileSize,
                 sha256 = newSha256,
                 createdBy = original.createdBy,

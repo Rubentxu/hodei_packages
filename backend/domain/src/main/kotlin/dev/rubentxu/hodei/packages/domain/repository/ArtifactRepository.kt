@@ -24,21 +24,21 @@ interface ArtifactRepository {
     
     /**
      * Busca artefactos por su repositorio.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @return Lista de artefactos en el repositorio
      */
-    suspend fun findByRepositoryId(repositoryId: UUID): List<Artifact>
+    suspend fun findByregistryId(registryId: UUID): List<Artifact>
     
     /**
      * Busca un artefacto específico en un repositorio por sus coordenadas.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @param groupId Grupo del artefacto
      * @param artifactId ID del artefacto
      * @param version Versión del artefacto (opcional, si no se especifica se devuelve la última)
      * @return El artefacto si existe, null en caso contrario
      */
     suspend fun findByCoordinates(
-        repositoryId: UUID,
+        registryId: UUID,
         groupId: String,
         artifactId: String,
         version: String? = null
@@ -46,13 +46,13 @@ interface ArtifactRepository {
     
     /**
      * Busca todas las versiones de un artefacto en un repositorio.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @param groupId Grupo del artefacto
      * @param artifactId ID del artefacto
      * @return Lista de versiones del artefacto ordenadas por fecha (más reciente primero)
      */
     suspend fun findAllVersions(
-        repositoryId: UUID,
+        registryId: UUID,
         groupId: String,
         artifactId: String
     ): List<Artifact>
@@ -66,8 +66,8 @@ interface ArtifactRepository {
     
     /**
      * Elimina todos los artefactos de un repositorio.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @return Número de artefactos eliminados
      */
-    suspend fun deleteByRepositoryId(repositoryId: UUID): Int
+    suspend fun deleteByregistryId(registryId: UUID): Int
 }

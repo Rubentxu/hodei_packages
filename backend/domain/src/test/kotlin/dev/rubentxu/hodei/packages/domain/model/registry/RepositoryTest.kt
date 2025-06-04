@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.repository
+package dev.rubentxu.hodei.packages.domain.model.registry
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
@@ -12,10 +12,10 @@ class RepositoryTest : StringSpec({
         val id = UUID.randomUUID()
         val now = Instant.now()
         
-        val repository = Repository(
+        val registry = Registry(
             id = id,
             name = "central-maven",
-            type = RepositoryType.MAVEN,
+            type = RegistryType.MAVEN,
             description = "Central Maven repository",
             createdBy = UUID.randomUUID(),
             createdAt = now,
@@ -24,23 +24,23 @@ class RepositoryTest : StringSpec({
             storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
         )
         
-        repository.id shouldBe id
-        repository.name shouldBe "central-maven"
-        repository.type shouldBe RepositoryType.MAVEN
-        repository.description shouldBe "Central Maven repository"
-        repository.createdAt shouldBe now
-        repository.updatedAt shouldBe now
-        repository.isPublic shouldBe true
+        registry.id shouldBe id
+        registry.name shouldBe "central-maven"
+        registry.type shouldBe RegistryType.MAVEN
+        registry.description shouldBe "Central Maven repository"
+        registry.createdAt shouldBe now
+        registry.updatedAt shouldBe now
+        registry.isPublic shouldBe true
     }
     
     "should create a valid NPM repository" {
         val id = UUID.randomUUID()
         val now = Instant.now()
         
-        val repository = Repository(
+        val registry = Registry(
             id = id,
             name = "npm-repo",
-            type = RepositoryType.NPM,
+            type = RegistryType.NPM,
             description = "NPM repository",
             createdBy = UUID.randomUUID(),
             createdAt = now,
@@ -49,21 +49,21 @@ class RepositoryTest : StringSpec({
             storageType = StorageType.LOCAL // Assuming StorageType is defined elsewhere
         )
         
-        repository.id shouldBe id
-        repository.name shouldBe "npm-repo"
-        repository.type shouldBe RepositoryType.NPM
-        repository.description shouldBe "NPM repository"
-        repository.createdAt shouldBe now
-        repository.updatedAt shouldBe now
-        repository.isPublic shouldBe false
+        registry.id shouldBe id
+        registry.name shouldBe "npm-repo"
+        registry.type shouldBe RegistryType.NPM
+        registry.description shouldBe "NPM repository"
+        registry.createdAt shouldBe now
+        registry.updatedAt shouldBe now
+        registry.isPublic shouldBe false
     }
     
     "should throw exception when repository name is blank" {
         val exception = shouldThrow<IllegalArgumentException> {
-            Repository(
+            Registry(
                 id = UUID.randomUUID(),
                 name = "",
-                type = RepositoryType.MAVEN,
+                type = RegistryType.MAVEN,
                 description = "Invalid repository",
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
@@ -73,15 +73,15 @@ class RepositoryTest : StringSpec({
             )
         }
         
-        exception.message shouldBe "Repository name cannot be blank"
+        exception.message shouldBe "ArtifactRegistry name cannot be blank"
     }
     
     "should throw exception when repository name has invalid characters" {
         val exception = shouldThrow<IllegalArgumentException> {
-            Repository(
+            Registry(
                 id = UUID.randomUUID(),
                 name = "invalid/repo",
-                type = RepositoryType.MAVEN,
+                type = RegistryType.MAVEN,
                 description = "Invalid repository",
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
@@ -91,16 +91,16 @@ class RepositoryTest : StringSpec({
             )
         }
         
-        exception.message shouldBe "Repository name can only contain alphanumeric characters, hyphens, and underscores"
+        exception.message shouldBe "ArtifactRegistry name can only contain alphanumeric characters, hyphens, and underscores"
     }
     
     "should throw exception when repository description exceeds maximum length" {
         val longDescription = "a".repeat(256)
         val exception = shouldThrow<IllegalArgumentException> {
-            Repository(
+            Registry(
                 id = UUID.randomUUID(),
                 name = "maven-repo",
-                type = RepositoryType.MAVEN,
+                type = RegistryType.MAVEN,
                 description = longDescription,
                 createdBy = UUID.randomUUID(),
                 createdAt = Instant.now(),
@@ -110,6 +110,6 @@ class RepositoryTest : StringSpec({
             )
         }
         
-        exception.message shouldBe "Repository description cannot exceed 255 characters"
+        exception.message shouldBe "ArtifactRegistry description cannot exceed 255 characters"
     }
 })

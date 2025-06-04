@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.domain.model.artifact
 
-import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
+import dev.rubentxu.hodei.packages.domain.model.registry.RegistryType
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -16,11 +16,11 @@ class ArtifactTest : StringSpec({
         
         val artifact = Artifact(
             id = id,
-            repositoryId = repositoryId,
+            registryId = repositoryId,
             groupId = "org.example",
             artifactId = "example-lib",
             version = "1.0.0",
-            repositoryType = RepositoryType.MAVEN,
+            registryType = RegistryType.MAVEN,
             fileSize = 1024L,
             sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             createdBy = UUID.randomUUID(),
@@ -30,11 +30,11 @@ class ArtifactTest : StringSpec({
         )
         
         artifact.id shouldBe id
-        artifact.repositoryId shouldBe repositoryId
+        artifact.registryId shouldBe repositoryId
         artifact.groupId shouldBe "org.example"
         artifact.artifactId shouldBe "example-lib"
         artifact.version shouldBe "1.0.0"
-        artifact.repositoryType shouldBe RepositoryType.MAVEN
+        artifact.registryType shouldBe RegistryType.MAVEN
         artifact.fileSize shouldBe 1024L
         artifact.sha256 shouldBe "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         artifact.createdAt shouldBe now
@@ -49,11 +49,11 @@ class ArtifactTest : StringSpec({
         
         val artifact = Artifact(
             id = id,
-            repositoryId = repositoryId,
+            registryId = repositoryId,
             groupId = "@example",
             artifactId = "ui-lib",
             version = "2.3.1-beta.1",
-            repositoryType = RepositoryType.NPM,
+            registryType = RegistryType.NPM,
             fileSize = 5120L,
             sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             createdBy = UUID.randomUUID(),
@@ -63,11 +63,11 @@ class ArtifactTest : StringSpec({
         )
         
         artifact.id shouldBe id
-        artifact.repositoryId shouldBe repositoryId
+        artifact.registryId shouldBe repositoryId
         artifact.groupId shouldBe "@example"
         artifact.artifactId shouldBe "ui-lib"
         artifact.version shouldBe "2.3.1-beta.1"
-        artifact.repositoryType shouldBe RepositoryType.NPM
+        artifact.registryType shouldBe RegistryType.NPM
         artifact.fileSize shouldBe 5120L
         artifact.metadata shouldBe mapOf("keywords" to "ui, components")
     }
@@ -76,11 +76,11 @@ class ArtifactTest : StringSpec({
         val exception = shouldThrow<IllegalArgumentException> {
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = UUID.randomUUID(),
+                registryId = UUID.randomUUID(),
                 groupId = "",
                 artifactId = "example-lib",
                 version = "1.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1024L,
                 sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 createdBy = UUID.randomUUID(),
@@ -97,11 +97,11 @@ class ArtifactTest : StringSpec({
         val exception = shouldThrow<IllegalArgumentException> {
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = UUID.randomUUID(),
+                registryId = UUID.randomUUID(),
                 groupId = "org.example",
                 artifactId = "",
                 version = "1.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1024L,
                 sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 createdBy = UUID.randomUUID(),
@@ -118,11 +118,11 @@ class ArtifactTest : StringSpec({
         val exception = shouldThrow<IllegalArgumentException> {
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = UUID.randomUUID(),
+                registryId = UUID.randomUUID(),
                 groupId = "org.example",
                 artifactId = "example-lib",
                 version = "invalid-version",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1024L,
                 sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 createdBy = UUID.randomUUID(),
@@ -139,11 +139,11 @@ class ArtifactTest : StringSpec({
         val exception = shouldThrow<IllegalArgumentException> {
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = UUID.randomUUID(),
+                registryId = UUID.randomUUID(),
                 groupId = "org.example",
                 artifactId = "example-lib",
                 version = "1.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = -10L,
                 sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 createdBy = UUID.randomUUID(),
@@ -160,11 +160,11 @@ class ArtifactTest : StringSpec({
         val exception = shouldThrow<IllegalArgumentException> {
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = UUID.randomUUID(),
+                registryId = UUID.randomUUID(),
                 groupId = "org.example",
                 artifactId = "example-lib",
                 version = "1.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1024L,
                 sha256 = "invalid-hash",
                 createdBy = UUID.randomUUID(),

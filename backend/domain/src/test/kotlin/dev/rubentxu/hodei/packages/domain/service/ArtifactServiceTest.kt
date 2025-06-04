@@ -2,11 +2,11 @@ package dev.rubentxu.hodei.packages.domain.service
 
 import dev.rubentxu.hodei.packages.domain.events.artifact.ArtifactEvent
 import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
-import dev.rubentxu.hodei.packages.domain.model.repository.Repository
-import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
-import dev.rubentxu.hodei.packages.domain.model.repository.StorageType
+import dev.rubentxu.hodei.packages.domain.model.registry.Registry
+import dev.rubentxu.hodei.packages.domain.model.registry.RegistryType
+import dev.rubentxu.hodei.packages.domain.model.registry.StorageType
 import dev.rubentxu.hodei.packages.domain.repository.ArtifactRepository
-import dev.rubentxu.hodei.packages.domain.repository.RepositoryRepository
+import dev.rubentxu.hodei.packages.domain.repository.RegistryRepository
 import io.kotest.assertions.throwables.shouldThrow
 
 import io.kotest.core.spec.style.StringSpec
@@ -21,17 +21,17 @@ class ArtifactServiceTest : StringSpec({
 
     // Configuración común
     lateinit var artifactRepository: ArtifactRepository
-    lateinit var repositoryRepository: RepositoryRepository
+    lateinit var registryRepository: RegistryRepository
     lateinit var eventPublisher: (ArtifactEvent) -> Unit
     lateinit var artifactService: ArtifactService
 
     // Datos de prueba comunes
-    val repositoryId = UUID.randomUUID()
+    val registryId = UUID.randomUUID()
     val userId = UUID.randomUUID()
-    val testRepo = Repository(
-        id = repositoryId,
+    val testRepo = Registry(
+        id = registryId,
         name = "test-repo",
-        type = RepositoryType.MAVEN,
+        type = RegistryType.MAVEN,
         description = "Test repository",
         isPublic = true,
         createdBy = userId,
@@ -42,9 +42,9 @@ class ArtifactServiceTest : StringSpec({
 
     beforeTest {
         artifactRepository = mockk()
-        repositoryRepository = mockk()
+        registryRepository = mockk()
         eventPublisher = mockk(relaxed = true)
-        artifactService = ArtifactService(artifactRepository, repositoryRepository, eventPublisher)
+        artifactService = ArtifactService(artifactRepository, registryRepository, eventPublisher)
     }
 
 
@@ -52,13 +52,13 @@ class ArtifactServiceTest : StringSpec({
     "uploadArtifact should throw exception when repository doesn't exist" { runTest {
         // Arrange
 
-            coEvery { repositoryRepository.findById(repositoryId) } returns null
+            coEvery { registryRepository.findById(registryId) } returns null
 
 
         // Act & Assert
         shouldThrow<IllegalArgumentException> {
             artifactService.uploadArtifact(
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = "dev.rubentxu",
                 artifactId = "test-library",
                 version = "1.0.0",
@@ -67,9 +67,9 @@ class ArtifactServiceTest : StringSpec({
                 metadata = emptyMap(),
                 uploadedBy = userId
             )
-        }.message shouldBe "Repository with ID '$repositoryId' not found"
+        }.message shouldBe "ArtifactRegistry with ID '$registryId' not found"
 
-        coVerify { repositoryRepository.findById(repositoryId) }
+        coVerify { registryRepository.findById(registryId) }
         coVerify(exactly = 0) { artifactRepository.findByCoordinates(any(), any(), any(), any()) }
         coVerify(exactly = 0) { artifactRepository.save(any()) }
         verify(exactly = 0) { eventPublisher(any()) }
@@ -77,12 +77,12 @@ class ArtifactServiceTest : StringSpec({
 
     "uploadArtifact should throw exception for non-existent repository" { runTest {
         // Arrange
-        coEvery { repositoryRepository.findById(repositoryId) } returns null
+        coEvery { registryRepository.findById(registryId) } returns null
 
         // Act & Assert
         shouldThrow<IllegalArgumentException> {
             artifactService.uploadArtifact(
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = "dev.rubentxu",
                 artifactId = "test-library",
                 version = "1.0.0",
@@ -91,9 +91,9 @@ class ArtifactServiceTest : StringSpec({
                 metadata = emptyMap(),
                 uploadedBy = userId
             )
-        }.message shouldBe "Repository with ID '$repositoryId' not found"
+        }.message shouldBe "ArtifactRegistry with ID '$registryId' not found"
 
-        coVerify { repositoryRepository.findById(repositoryId) }
+        coVerify { registryRepository.findById(registryId) }
         coVerify(exactly = 0) { artifactRepository.findByCoordinates(any(), any(), any(), any()) }
         coVerify(exactly = 0) { artifactRepository.save(any()) }
         verify(exactly = 0) { eventPublisher(any()) }
@@ -107,11 +107,11 @@ class ArtifactServiceTest : StringSpec({
 
         val existingArtifact = Artifact(
             id = UUID.randomUUID(),
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = groupId,
             artifactId = artifactId,
             version = version,
-            repositoryType = RepositoryType.MAVEN,
+            registryType = RegistryType.MAVEN,
             fileSize = 1024L,
             sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             createdBy = userId,
@@ -120,10 +120,10 @@ class ArtifactServiceTest : StringSpec({
             metadata = emptyMap()
         )
 
-        coEvery { repositoryRepository.findById(repositoryId) } returns testRepo
+        coEvery { registryRepository.findById(registryId) } returns testRepo
         coEvery {
             artifactRepository.findByCoordinates(
-                repositoryId,
+                registryId,
                 groupId,
                 artifactId,
                 version
@@ -133,7 +133,7 @@ class ArtifactServiceTest : StringSpec({
         // Act & Assert
         shouldThrow<IllegalStateException> {
             artifactService.uploadArtifact(
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = groupId,
                 artifactId = artifactId,
                 version = version,
@@ -142,10 +142,10 @@ class ArtifactServiceTest : StringSpec({
                 metadata = emptyMap(),
                 uploadedBy = userId
             )
-        }.message shouldBe "Artifact $groupId:$artifactId:$version already exists in repository ${testRepo.name}"
+        }.message shouldBe "Artifact $groupId:$artifactId:$version already exists in artifact registry ${testRepo.name}"
 
-        coVerify { repositoryRepository.findById(repositoryId) }
-        coVerify { artifactRepository.findByCoordinates(repositoryId, groupId, artifactId, version) }
+        coVerify { registryRepository.findById(registryId) }
+        coVerify { artifactRepository.findByCoordinates(registryId, groupId, artifactId, version) }
         coVerify(exactly = 0) { artifactRepository.save(any()) }
         verify(exactly = 0) { eventPublisher(any()) }
     }}
@@ -159,11 +159,11 @@ class ArtifactServiceTest : StringSpec({
 
         val artifact = Artifact(
             id = artifactId,
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = "dev.rubentxu",
             artifactId = "test-library",
             version = "1.0.0",
-            repositoryType = RepositoryType.MAVEN,
+            registryType = RegistryType.MAVEN,
             fileSize = 1024L,
             sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             createdBy = userId,
@@ -221,11 +221,11 @@ class ArtifactServiceTest : StringSpec({
 
         val artifact = Artifact(
             id = artifactId,
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = "dev.rubentxu",
             artifactId = "test-library",
             version = "1.0.0",
-            repositoryType = RepositoryType.MAVEN,
+            registryType = RegistryType.MAVEN,
             fileSize = 1024L,
             sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             createdBy = userId,
@@ -268,11 +268,11 @@ class ArtifactServiceTest : StringSpec({
 
         val artifact = Artifact(
             id = artifactId,
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = "dev.rubentxu",
             artifactId = "test-library",
             version = "1.0.0",
-            repositoryType = RepositoryType.MAVEN,
+            registryType = RegistryType.MAVEN,
             fileSize = 1024L,
             sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             createdBy = userId,
@@ -306,11 +306,11 @@ class ArtifactServiceTest : StringSpec({
         val artifacts = listOf(
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = "dev.rubentxu",
                 artifactId = "library1",
                 version = "1.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1024L,
                 sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
                 createdBy = userId,
@@ -320,11 +320,11 @@ class ArtifactServiceTest : StringSpec({
             ),
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = "dev.rubentxu",
                 artifactId = "library2",
                 version = "2.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 2048L,
                 sha256 = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
                 createdBy = userId,
@@ -334,17 +334,20 @@ class ArtifactServiceTest : StringSpec({
             )
         )
 
-        coEvery { repositoryRepository.findById(repositoryId) } returns testRepo
-        coEvery { artifactRepository.findByRepositoryId(repositoryId) } returns artifacts
+        coEvery { registryRepository.findById(registryId) } returns testRepo
+        coEvery { artifactRepository.findByregistryId(registryId) } returns artifacts
+
 
         // Act
-        val result = artifactService.findArtifactsByRepository(repositoryId)
+        val result = artifactService.findArtifactsByRepository(registryId)
+
 
         // Assert
         result shouldBe artifacts
 
-        coVerify { repositoryRepository.findById(repositoryId) }
-        coVerify { artifactRepository.findByRepositoryId(repositoryId) }
+        coVerify { registryRepository.findById(registryId) }
+        coVerify { artifactRepository.findByregistryId(registryId) }
+
     }}
 
     "findArtifactVersions should return all versions of an artifact" { runTest {
@@ -355,11 +358,11 @@ class ArtifactServiceTest : StringSpec({
         val versions = listOf(
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = groupId,
                 artifactId = artifactId,
                 version = "1.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1024L,
                 sha256 = "0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c4b5a69788796a5b4c3d2e1f0",
                 createdBy = userId,
@@ -369,11 +372,11 @@ class ArtifactServiceTest : StringSpec({
             ),
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = groupId,
                 artifactId = artifactId,
                 version = "1.1.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 1048L,
                 sha256 = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
                 createdBy = userId,
@@ -383,11 +386,11 @@ class ArtifactServiceTest : StringSpec({
             ),
             Artifact(
                 id = UUID.randomUUID(),
-                repositoryId = repositoryId,
+                registryId = registryId,
                 groupId = groupId,
                 artifactId = artifactId,
                 version = "2.0.0",
-                repositoryType = RepositoryType.MAVEN,
+                registryType = RegistryType.MAVEN,
                 fileSize = 2048L,
                 sha256 = "fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
                 createdBy = userId,
@@ -397,16 +400,16 @@ class ArtifactServiceTest : StringSpec({
             )
         )
 
-        coEvery { repositoryRepository.findById(repositoryId) } returns testRepo
-        coEvery { artifactRepository.findAllVersions(repositoryId, groupId, artifactId) } returns versions
+        coEvery { registryRepository.findById(registryId) } returns testRepo
+        coEvery { artifactRepository.findAllVersions(registryId, groupId, artifactId) } returns versions
 
         // Act
-        val result = artifactService.findArtifactVersions(repositoryId, groupId, artifactId)
+        val result = artifactService.findArtifactVersions(registryId, groupId, artifactId)
 
         // Assert
         result shouldBe versions
 
-        coVerify { repositoryRepository.findById(repositoryId) }
-        coVerify { artifactRepository.findAllVersions(repositoryId, groupId, artifactId) }
+        coVerify { registryRepository.findById(registryId) }
+        coVerify { artifactRepository.findAllVersions(registryId, groupId, artifactId) }
     }}
 })

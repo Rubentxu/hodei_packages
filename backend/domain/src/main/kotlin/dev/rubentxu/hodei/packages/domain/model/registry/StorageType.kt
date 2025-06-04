@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.repository
+package dev.rubentxu.hodei.packages.domain.model.registry
 
 /**
  * Defines the types of storage backends that a repository can use.

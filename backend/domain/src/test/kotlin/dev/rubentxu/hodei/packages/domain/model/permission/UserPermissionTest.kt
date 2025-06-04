@@ -22,7 +22,7 @@ class UserPermissionTest : StringSpec({
             id = id,
             userId = userId,
             roleId = roleId,
-            repositoryId = repositoryId,
+            registryId = repositoryId,
             grantedBy = grantedBy,
             grantedAt = now,
             expiresAt = expiresAt
@@ -31,7 +31,7 @@ class UserPermissionTest : StringSpec({
         permission.id shouldBe id
         permission.userId shouldBe userId
         permission.roleId shouldBe roleId
-        permission.repositoryId shouldBe repositoryId
+        permission.registryId shouldBe repositoryId
         permission.grantedBy shouldBe grantedBy
         permission.grantedAt shouldBe now
         permission.expiresAt shouldBe expiresAt
@@ -48,7 +48,7 @@ class UserPermissionTest : StringSpec({
             id = id,
             userId = userId,
             roleId = roleId,
-            repositoryId = null, // Global permission
+            registryId = null, // Global permission
             grantedBy = grantedBy,
             grantedAt = now,
             expiresAt = null     // Never expires
@@ -57,7 +57,7 @@ class UserPermissionTest : StringSpec({
         permission.id shouldBe id
         permission.userId shouldBe userId
         permission.roleId shouldBe roleId
-        permission.repositoryId shouldBe null
+        permission.registryId shouldBe null
         permission.grantedBy shouldBe grantedBy
         permission.grantedAt shouldBe now
         permission.expiresAt shouldBe null
@@ -76,7 +76,7 @@ class UserPermissionTest : StringSpec({
         
         permission.userId shouldBe userId
         permission.roleId shouldBe roleId
-        permission.repositoryId shouldBe null
+        permission.registryId shouldBe null
         permission.grantedBy shouldBe grantedBy
         permission.expiresAt shouldBe null
     }
@@ -98,7 +98,7 @@ class UserPermissionTest : StringSpec({
         
         permission.userId shouldBe userId
         permission.roleId shouldBe roleId
-        permission.repositoryId shouldBe repositoryId
+        permission.registryId shouldBe repositoryId
         permission.grantedBy shouldBe grantedBy
         permission.expiresAt shouldBe expiresAt
     }
@@ -111,7 +111,7 @@ class UserPermissionTest : StringSpec({
             id = UUID.randomUUID(),
             userId = UUID.randomUUID(),
             roleId = UUID.randomUUID(),
-            repositoryId = UUID.randomUUID(),
+            registryId = UUID.randomUUID(),
             grantedBy = UUID.randomUUID(),
             grantedAt = Instant.now(),
             expiresAt = futureExpiration
@@ -121,7 +121,7 @@ class UserPermissionTest : StringSpec({
             id = UUID.randomUUID(),
             userId = UUID.randomUUID(),
             roleId = UUID.randomUUID(),
-            repositoryId = UUID.randomUUID(),
+            registryId = UUID.randomUUID(),
             grantedBy = UUID.randomUUID(),
             grantedAt = Instant.now().minus(10, ChronoUnit.DAYS),
             expiresAt = pastExpiration
@@ -131,7 +131,7 @@ class UserPermissionTest : StringSpec({
             id = UUID.randomUUID(),
             userId = UUID.randomUUID(),
             roleId = UUID.randomUUID(),
-            repositoryId = UUID.randomUUID(),
+            registryId = UUID.randomUUID(),
             grantedBy = UUID.randomUUID(),
             grantedAt = Instant.now(),
             expiresAt = null
@@ -150,7 +150,7 @@ class UserPermissionTest : StringSpec({
             id = UUID.randomUUID(),
             userId = UUID.randomUUID(),
             roleId = UUID.randomUUID(),
-            repositoryId = repoId1,
+            registryId = repoId1,
             grantedBy = UUID.randomUUID(),
             grantedAt = Instant.now(),
             expiresAt = null
@@ -160,7 +160,7 @@ class UserPermissionTest : StringSpec({
             id = UUID.randomUUID(),
             userId = UUID.randomUUID(),
             roleId = UUID.randomUUID(),
-            repositoryId = null,
+            registryId = null,
             grantedBy = UUID.randomUUID(),
             grantedAt = Instant.now(),
             expiresAt = null
@@ -177,7 +177,7 @@ class UserPermissionTest : StringSpec({
             id = UUID.randomUUID(),
             userId = UUID.randomUUID(),
             roleId = UUID.randomUUID(),
-            repositoryId = UUID.randomUUID(),
+            registryId = UUID.randomUUID(),
             grantedBy = UUID.randomUUID(),
             grantedAt = Instant.now(),
             expiresAt = Instant.now().plus(10, ChronoUnit.DAYS)
@@ -200,7 +200,7 @@ class UserPermissionTest : StringSpec({
                 id = UUID.randomUUID(),
                 userId = UUID.randomUUID(),
                 roleId = UUID.randomUUID(),
-                repositoryId = UUID.randomUUID(),
+                registryId = UUID.randomUUID(),
                 grantedBy = UUID.randomUUID(),
                 grantedAt = now,
                 expiresAt = pastDate

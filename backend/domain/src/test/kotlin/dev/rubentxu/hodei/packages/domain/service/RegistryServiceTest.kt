@@ -13,17 +13,17 @@ import java.time.Instant
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 
-class RepositoryServiceTest : StringSpec({
+class RegistryServiceTest : StringSpec({
     
     // Configuración común
     lateinit var registryRepository: RegistryRepository
     lateinit var eventPublisher: (ArtifactRegistryEvent) -> Unit
-    lateinit var repositoryService: RepositoryService
+    lateinit var registryService: RegistryService
     
     beforeTest {
         registryRepository = mockk()
         eventPublisher = mockk(relaxed = true)
-        repositoryService = RepositoryService(registryRepository, eventPublisher)
+        registryService = RegistryService(registryRepository, eventPublisher)
     }
     
     "createRepository should create and persist a new repository" { runTest {
@@ -38,7 +38,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.save(any()) } answers { firstArg() }
         
         // Act
-        val result = repositoryService.createRepository(
+        val result = registryService.createArtifactRegistry(
             name = name,
             type = type,
             description = description,
@@ -65,14 +65,14 @@ class RepositoryServiceTest : StringSpec({
         
         // Act & Assert
         shouldThrow<IllegalStateException> {
-            repositoryService.createRepository(
+            registryService.createArtifactRegistry(
                 name = name,
                 type = RegistryType.NPM,
                 description = "This should fail",
                 isPublic = true,
                 createdBy = UUID.randomUUID()
             )
-        }.message shouldBe "A repository with name '$name' already exists"
+        }.message shouldBe "An artifact registry with name '$name' already exists"
         
         coVerify { registryRepository.existsByName(name) }
         coVerify(exactly = 0) { registryRepository.save(any()) }
@@ -102,7 +102,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.save(any()) } answers { firstArg() }
         
         // Act
-        val result = repositoryService.updateRepository(
+        val result = registryService.updateArtifactRegistry(
             id = repoId,
             description = newDescription,
             isPublic = newIsPublic,
@@ -126,12 +126,12 @@ class RepositoryServiceTest : StringSpec({
         
         // Act & Assert
         shouldThrow<IllegalArgumentException> {
-            repositoryService.updateRepository(
+            registryService.updateArtifactRegistry(
                 id = repoId,
                 description = "New description",
                 updatedBy = UUID.randomUUID()
             )
-        }.message shouldBe "Repository with ID '$repoId' not found"
+        }.message shouldBe "ArtifactRegistry with ID '$repoId' not found"
         
         coVerify { registryRepository.findById(repoId) }
         coVerify(exactly = 0) { registryRepository.save(any()) }
@@ -158,7 +158,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.deleteById(repoId) } returns true
         
         // Act
-        val result = repositoryService.deleteRepository(repoId, deletedBy)
+        val result = registryService.deleteArtifactRegistry(repoId, deletedBy)
         
         // Assert
         result shouldBe true
@@ -174,7 +174,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.findById(repoId) } returns null
         
         // Act
-        val result = repositoryService.deleteRepository(repoId, UUID.randomUUID())
+        val result = registryService.deleteArtifactRegistry(repoId, UUID.randomUUID())
         
         // Assert
         result shouldBe false
@@ -206,7 +206,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.save(any()) } answers { firstArg() }
         
         // Act
-        val result = repositoryService.changeRepositoryVisibility(
+        val result = registryService.changeArtifactRegistryVisibility(
             id = repoId,
             isPublic = newVisibility,
             updatedBy = updatedBy
@@ -251,7 +251,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.findAll(type) } returns repos
         
         // Act
-        val result = repositoryService.findRepositories(type)
+        val result = registryService.findArtifactRegistries(type)
         
         // Assert
         result shouldBe repos
@@ -277,7 +277,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.findById(repoId) } returns existingRepo
         
         // Act
-        val result = repositoryService.findRepositoryById(repoId)
+        val result = registryService.findArtifactRegistryById(repoId)
         
         // Assert
         result shouldBe existingRepo
@@ -292,7 +292,7 @@ class RepositoryServiceTest : StringSpec({
         coEvery { registryRepository.findById(repoId) } returns null
         
         // Act
-        val result = repositoryService.findRepositoryById(repoId)
+        val result = registryService.findArtifactRegistryById(repoId)
         
         // Assert
         result shouldBe null

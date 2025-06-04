@@ -1,7 +1,7 @@
 package dev.rubentxu.hodei.packages.domain.service
 
 import dev.rubentxu.hodei.packages.domain.events.registry.ArtifactRegistryEvent
-import dev.rubentxu.hodei.packages.domain.model.registry.ArtifactRegistry
+import dev.rubentxu.hodei.packages.domain.model.registry.Registry
 import dev.rubentxu.hodei.packages.domain.model.registry.RegistryType
 import dev.rubentxu.hodei.packages.domain.model.registry.StorageType
 import dev.rubentxu.hodei.packages.domain.repository.RegistryRepository
@@ -12,7 +12,7 @@ import java.util.UUID
  * Servicio de dominio que encapsula la lógica de negocio relacionada con la gestión de registros de artefactos.
  * Este servicio utiliza el puerto ArtifactRegistryRepository para persistencia y emite eventos de dominio.
  */
-class ArtifactRegistryService(
+class RegistryService(
     private val registryRepository: RegistryRepository,
     private val eventPublisher: (ArtifactRegistryEvent) -> Unit
 ) {
@@ -32,14 +32,14 @@ class ArtifactRegistryService(
         description: String,
         isPublic: Boolean,
         createdBy: UUID
-    ): ArtifactRegistry {
+    ): Registry {
         // Verificar si ya existe un registro de artefactos con el mismo nombre
         if (registryRepository.existsByName(name)) {
             throw IllegalStateException("An artifact registry with name '$name' already exists")
         }
         
         val now = Instant.now()
-        val artifactRegistry = ArtifactRegistry(
+        val registry = Registry(
             id = UUID.randomUUID(),
             name = name,
             type = type,
@@ -52,7 +52,7 @@ class ArtifactRegistryService(
         )
         
         // Persistir el registro de artefactos
-        val savedArtifactRegistry = registryRepository.save(artifactRegistry)
+        val savedArtifactRegistry = registryRepository.save(registry)
         
         // Publicar evento de creación de registro de artefactos
         eventPublisher(
@@ -82,7 +82,7 @@ class ArtifactRegistryService(
         description: String? = null,
         isPublic: Boolean? = null,
         updatedBy: UUID
-    ): ArtifactRegistry {
+    ): Registry {
         val artifactRegistry = registryRepository.findById(id)
             ?: throw IllegalArgumentException("ArtifactRegistry with ID '$id' not found")
         
@@ -151,7 +151,7 @@ class ArtifactRegistryService(
      * @return El registro de artefactos actualizado
      * @throws IllegalArgumentException si el registro de artefactos no existe
      */
-    suspend fun changeArtifactRegistryVisibility(id: UUID, isPublic: Boolean, updatedBy: UUID): ArtifactRegistry {
+    suspend fun changeArtifactRegistryVisibility(id: UUID, isPublic: Boolean, updatedBy: UUID): Registry {
         val artifactRegistry = registryRepository.findById(id)
             ?: throw IllegalArgumentException("ArtifactRegistry with ID '$id' not found")
         
@@ -186,7 +186,7 @@ class ArtifactRegistryService(
      * @param type Tipo de registro de artefactos (opcional)
      * @return Lista de registros de artefactos que coinciden con los criterios
      */
-    suspend fun findArtifactRegistries(type: RegistryType? = null): List<ArtifactRegistry> {
+    suspend fun findArtifactRegistries(type: RegistryType? = null): List<Registry> {
         return registryRepository.findAll(type)
     }
     
@@ -195,7 +195,7 @@ class ArtifactRegistryService(
      * @param id ID del registro de artefactos
      * @return El registro de artefactos si existe, null en caso contrario
      */
-    suspend fun findArtifactRegistryById(id: UUID): ArtifactRegistry? {
+    suspend fun findArtifactRegistryById(id: UUID): Registry? {
         return registryRepository.findById(id)
     }
     
@@ -204,7 +204,7 @@ class ArtifactRegistryService(
      * @param name Nombre del registro de artefactos
      * @return El registro de artefactos si existe, null en caso contrario
      */
-    suspend fun findArtifactRegistryByName(name: String): ArtifactRegistry? {
+    suspend fun findArtifactRegistryByName(name: String): Registry? {
         return registryRepository.findByName(name)
     }
 }

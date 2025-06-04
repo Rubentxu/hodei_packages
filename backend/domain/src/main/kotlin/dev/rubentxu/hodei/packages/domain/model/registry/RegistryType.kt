@@ -1,9 +1,9 @@
-package dev.rubentxu.hodei.packages.domain.model.repository
+package dev.rubentxu.hodei.packages.domain.model.registry
 
 /**
  * Tipos de repositorios soportados por el sistema.
  */
-enum class RepositoryType {
+enum class RegistryType {
     /**
      * Repositorio Maven para artefactos Java/Kotlin
      */
@@ -20,7 +20,7 @@ enum class RepositoryType {
          * @param name Nombre del tipo de repositorio
          * @return RepositoryType correspondiente o null si no existe
          */
-        fun fromString(name: String): RepositoryType? {
+        fun fromString(name: String): RegistryType? {
             return values().find { it.name.equals(name, ignoreCase = true) }
         }
     }

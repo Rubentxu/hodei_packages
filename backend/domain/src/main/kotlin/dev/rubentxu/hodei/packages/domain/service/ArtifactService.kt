@@ -2,10 +2,8 @@ package dev.rubentxu.hodei.packages.domain.service
 
 import dev.rubentxu.hodei.packages.domain.events.artifact.ArtifactEvent
 import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
-import dev.rubentxu.hodei.packages.domain.model.repository.ArtifactRegistry
-import dev.rubentxu.hodei.packages.domain.model.repository.RepositoryType
 import dev.rubentxu.hodei.packages.domain.repository.ArtifactRepository
-import dev.rubentxu.hodei.packages.domain.repository.ArtifactRegistryRepository
+import dev.rubentxu.hodei.packages.domain.repository.RegistryRepository
 import java.time.Instant
 import java.util.UUID
 
@@ -15,12 +13,12 @@ import java.util.UUID
  */
 class ArtifactService(
     private val artifactRepository: ArtifactRepository,
-    private val repositoryRepository: ArtifactRegistryRepository,
+    private val registryRepository: RegistryRepository,
     private val eventPublisher: (ArtifactEvent) -> Unit
 ) {
     /**
      * Sube un nuevo artefacto a un repositorio.
-     * @param repositoryId ID del repositorio donde se subirá el artefacto
+     * @param registryId ID del repositorio donde se subirá el artefacto
      * @param groupId Grupo del artefacto
      * @param artifactId ID del artefacto
      * @param version Versión del artefacto
@@ -33,7 +31,7 @@ class ArtifactService(
      * @throws IllegalStateException si ya existe un artefacto con las mismas coordenadas
      */
     suspend fun uploadArtifact(
-        repositoryId: UUID,
+        registryId: UUID,
         groupId: String,
         artifactId: String,
         version: String,
@@ -43,12 +41,12 @@ class ArtifactService(
         uploadedBy: UUID
     ): Artifact {
         // Verificar que el repositorio existe
-        val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
+        val repository = registryRepository.findById(registryId)
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$registryId' not found")
         
         // Verificar si ya existe un artefacto con las mismas coordenadas
         val existingArtifact = artifactRepository.findByCoordinates(
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = groupId,
             artifactId = artifactId,
             version = version
@@ -61,11 +59,11 @@ class ArtifactService(
         val now = Instant.now()
         val artifact = Artifact(
             id = UUID.randomUUID(),
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = groupId,
             artifactId = artifactId,
             version = version,
-            repositoryType = repository.type,
+            registryType = repository.type,
             fileSize = fileSize,
             sha256 = sha256,
             createdBy = uploadedBy,
@@ -81,7 +79,7 @@ class ArtifactService(
         eventPublisher(
             ArtifactEvent.ArtifactUploaded(
                 artifactId = savedArtifact.id,
-                repositoryId = savedArtifact.repositoryId,
+                registryId = savedArtifact.registryId,
                 groupId = savedArtifact.groupId,
                 artifactName = savedArtifact.artifactId,
                 version = savedArtifact.version,
@@ -116,7 +114,7 @@ class ArtifactService(
         eventPublisher(
             ArtifactEvent.ArtifactDownloaded(
                 artifactId = artifact.id,
-                repositoryId = artifact.repositoryId,
+                registryId = artifact.registryId,
                 groupId = artifact.groupId,
                 artifactName = artifact.artifactId,
                 version = artifact.version,
@@ -162,7 +160,7 @@ class ArtifactService(
             eventPublisher(
                 ArtifactEvent.ArtifactMetadataUpdated(
                     artifactId = savedArtifact.id,
-                    repositoryId = savedArtifact.repositoryId,
+                    registryId = savedArtifact.registryId,
                     groupId = savedArtifact.groupId,
                     artifactName = savedArtifact.artifactId,
                     version = savedArtifact.version,
@@ -195,7 +193,7 @@ class ArtifactService(
             eventPublisher(
                 ArtifactEvent.ArtifactDeleted(
                     artifactId = artifact.id,
-                    repositoryId = artifact.repositoryId,
+                    registryId = artifact.registryId,
                     groupId = artifact.groupId,
                     artifactName = artifact.artifactId,
                     version = artifact.version,
@@ -210,37 +208,37 @@ class ArtifactService(
     
     /**
      * Busca artefactos en un repositorio específico.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @return Lista de artefactos en el repositorio
      * @throws IllegalArgumentException si el repositorio no existe
      */
-    suspend fun findArtifactsByRepository(repositoryId: UUID): List<Artifact> {
+    suspend fun findArtifactsByRepository(registryId: UUID): List<Artifact> {
         // Verificar que el repositorio existe
-        val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
+        val repository = registryRepository.findById(registryId)
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$registryId' not found")
         
-        return artifactRepository.findByRepositoryId(repositoryId)
+        return artifactRepository.findByregistryId(registryId)
     }
     
     /**
      * Busca todas las versiones de un artefacto específico.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @param groupId Grupo del artefacto
      * @param artifactId ID del artefacto
      * @return Lista de versiones del artefacto ordenadas por fecha
      * @throws IllegalArgumentException si el repositorio no existe
      */
     suspend fun findArtifactVersions(
-        repositoryId: UUID,
+        registryId: UUID,
         groupId: String,
         artifactId: String
     ): List<Artifact> {
         // Verificar que el repositorio existe
-        val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
+        val repository = registryRepository.findById(registryId)
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$registryId' not found")
         
         return artifactRepository.findAllVersions(
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = groupId,
             artifactId = artifactId
         )
@@ -248,7 +246,7 @@ class ArtifactService(
     
     /**
      * Obtiene un artefacto específico por sus coordenadas.
-     * @param repositoryId ID del repositorio
+     * @param registryId ID del repositorio
      * @param groupId Grupo del artefacto
      * @param artifactId ID del artefacto
      * @param version Versión específica (opcional, si no se especifica se devuelve la última)
@@ -256,17 +254,17 @@ class ArtifactService(
      * @throws IllegalArgumentException si el repositorio no existe
      */
     suspend fun getArtifact(
-        repositoryId: UUID,
+        registryId: UUID,
         groupId: String,
         artifactId: String,
         version: String? = null
     ): Artifact? {
         // Verificar que el repositorio existe
-        val repository = repositoryRepository.findById(repositoryId)
-            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found")
+        val repository = registryRepository.findById(registryId)
+            ?: throw IllegalArgumentException("ArtifactRegistry with ID '$registryId' not found")
         
         return artifactRepository.findByCoordinates(
-            repositoryId = repositoryId,
+            registryId = registryId,
             groupId = groupId,
             artifactId = artifactId,
             version = version

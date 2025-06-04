@@ -11,7 +11,7 @@ data class UserPermission(
     val id: UUID,
     val userId: UUID,
     val roleId: UUID,
-    val repositoryId: UUID?,  // Null para roles globales
+    val registryId: UUID?,  // Null para roles globales
     val grantedBy: UUID,
     val grantedAt: Instant,
     val expiresAt: Instant?   // Null para permisos permanentes
@@ -41,7 +41,7 @@ data class UserPermission(
      * @return true si el permiso aplica al repositorio, false en caso contrario
      */
     fun appliesTo(repoId: UUID): Boolean {
-        return repositoryId == null || repositoryId == repoId
+        return registryId == null || registryId == repoId
     }
     
     /**
@@ -66,7 +66,7 @@ data class UserPermission(
             id = UUID.randomUUID(),
             userId = userId,
             roleId = roleId,
-            repositoryId = null,
+            registryId = null,
             grantedBy = grantedBy,
             grantedAt = Instant.now(),
             expiresAt = expiresAt
@@ -85,7 +85,7 @@ data class UserPermission(
             id = UUID.randomUUID(),
             userId = userId,
             roleId = roleId,
-            repositoryId = repositoryId,
+            registryId = repositoryId,
             grantedBy = grantedBy,
             grantedAt = Instant.now(),
             expiresAt = expiresAt
