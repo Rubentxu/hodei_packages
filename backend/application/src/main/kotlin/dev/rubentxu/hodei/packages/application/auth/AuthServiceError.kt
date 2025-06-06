@@ -1,13 +1,17 @@
 package dev.rubentxu.hodei.packages.application.auth
 
-sealed class AuthServiceError {
-    data class ValidationFailed(val reason: String) : AuthServiceError()
+sealed class AuthServiceError : Exception {
+    constructor() : super()
+    constructor(message: String) : super(message)
+    constructor(message: String, cause: Throwable?) : super(message, cause)
 
-    data object AdminAlreadyExists : AuthServiceError()
+    class ValidationFailed(reason: String) : AuthServiceError(reason)
 
-    data object UserNotFound : AuthServiceError()
+    object AdminAlreadyExists : AuthServiceError("Admin user already exists")
 
-    data object InvalidCredentials : AuthServiceError()
+    object UserNotFound : AuthServiceError("User not found")
 
-    data class UnexpectedError(val message: String, val cause: Throwable? = null) : AuthServiceError()
+    object InvalidCredentials : AuthServiceError("Invalid credentials")
+
+    class UnexpectedError(message: String, cause: Throwable? = null) : AuthServiceError(message, cause)
 }

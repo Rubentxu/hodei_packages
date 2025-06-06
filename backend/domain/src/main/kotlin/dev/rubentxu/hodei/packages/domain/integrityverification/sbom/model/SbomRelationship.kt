@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.sbom
+package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model
 
 /**
  * Representa una relación entre dos componentes dentro de un documento SBOM.

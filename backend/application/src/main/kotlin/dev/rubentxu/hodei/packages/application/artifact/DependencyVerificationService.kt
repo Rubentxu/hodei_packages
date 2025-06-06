@@ -1,7 +1,8 @@
 package dev.rubentxu.hodei.packages.application.artifact
 
-import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactId
-import dev.rubentxu.hodei.packages.domain.model.sbom.SbomId
+
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactId
+import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomId
 import dev.rubentxu.hodei.packages.domain.model.sbom.DomainVulnerabilityInfo
 
 interface DependencyVerificationService {

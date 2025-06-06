@@ -1,7 +1,8 @@
 package dev.rubentxu.hodei.packages.application.audit
 
-import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactId
-import dev.rubentxu.hodei.packages.domain.model.attestation.Attestation
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactId
+import dev.rubentxu.hodei.packages.domain.integrityverification.attestation.model.Attestation
+
 
 interface SupplyChainAuditService {
     suspend fun auditRelease(artifactId: ArtifactId): AuditReport

@@ -1,8 +1,9 @@
 package dev.rubentxu.hodei.packages.application.artifact
 
-import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
-import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactCoordinates
-import dev.rubentxu.hodei.packages.domain.model.artifact.UserId
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.Artifact
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactCoordinates
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.UserId
+
 
 interface ArtifactPublicationService {
     suspend fun publish(command: PublishArtifactCommand): Result<Artifact>

@@ -1,8 +1,9 @@
 package dev.rubentxu.hodei.packages.application.policy
 
-import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
-import dev.rubentxu.hodei.packages.domain.model.policy.PolicyId
-import dev.rubentxu.hodei.packages.domain.model.policy.SecurityPolicy
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.Artifact
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.PolicyId
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.SecurityPolicy
+
 
 interface SecurityPolicyService {
     suspend fun enforcePolicies(artifact: Artifact): PolicyEnforcementResult

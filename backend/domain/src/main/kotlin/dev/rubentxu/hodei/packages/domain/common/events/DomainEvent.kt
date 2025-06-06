@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.common.events
+package dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events
 
 import java.time.Instant
 import java.util.UUID

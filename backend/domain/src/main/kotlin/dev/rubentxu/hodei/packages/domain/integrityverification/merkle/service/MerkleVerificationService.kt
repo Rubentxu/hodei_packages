@@ -1,15 +1,17 @@
-package dev.rubentxu.hodei.packages.domain.integrityverification.merkle.service
+package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model
 
-import dev.rubentxu.hodei.packages.domain.common.events.EventPublisher
+
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.EventPublisher
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events.MerkleGraphVerifiedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events.MerkleVerificationFailedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events.TamperingDetectedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.ContentHash
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.MerkleNode
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.MerkleNodeType
+import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports.ContentAddressableStorage
+import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports.CryptographicService
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports.MerkleGraphRepository
-import dev.rubentxu.hodei.packages.domain.ports.merkle.ContentAddressableStorage
-import dev.rubentxu.hodei.packages.domain.ports.merkle.CryptographicService
+
 
 /**
  * Domain service responsible for verifying the integrity and authenticity of artifacts

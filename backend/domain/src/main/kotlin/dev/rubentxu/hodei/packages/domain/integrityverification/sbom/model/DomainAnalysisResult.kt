@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.sbom
+package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model
 
 import java.time.Instant
 import java.util.UUID

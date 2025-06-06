@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.permission
+package dev.rubentxu.hodei.packages.domain.policymanagement.model
 
 import dev.rubentxu.hodei.packages.domain.policymanagement.model.Permission
 import java.time.Instant

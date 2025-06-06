@@ -1,7 +1,7 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events
 
 
-import dev.rubentxu.hodei.packages.domain.common.events.DomainEvent
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.DomainEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.ContentHash
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.Signature
 import java.time.Instant

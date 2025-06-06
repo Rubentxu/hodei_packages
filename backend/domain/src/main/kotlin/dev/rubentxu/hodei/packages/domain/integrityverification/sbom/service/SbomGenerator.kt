@@ -1,14 +1,15 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.service
 
-import dev.rubentxu.hodei.packages.domain.common.events.EventPublisher
+
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.EventPublisher
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomGenerationCompletedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomGenerationFailedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomGenerationStartedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomComponent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomDocument
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomFormat
+import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.ports.SbomGeneratorPort
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.ports.SbomRepository
-import dev.rubentxu.hodei.packages.domain.ports.sbom.SbomGeneratorPort
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject

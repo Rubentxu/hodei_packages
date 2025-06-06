@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.sbom
+package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model
 
 data class DomainLicenseInfo(
     val status: String, // e.g., "COMPLIANT", "NON_COMPLIANT", "UNKNOWN"

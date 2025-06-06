@@ -46,4 +46,10 @@ interface UserRepository {
      * @param id The ID of the admin user to delete.
      */
     fun delete(id: UUID)
+
+    /**
+     * Checks if there is already an admin user in the system.
+     * @return true if an admin user exists, false otherwise.
+     */
+    fun existsAdmin(): Boolean = findAll().any { it.isActive }
 }

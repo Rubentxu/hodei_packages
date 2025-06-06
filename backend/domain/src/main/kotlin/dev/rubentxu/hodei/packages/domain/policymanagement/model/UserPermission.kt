@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.model.permission
+package dev.rubentxu.hodei.packages.domain.policymanagement.ports
 
 import java.time.Instant
 import java.util.UUID

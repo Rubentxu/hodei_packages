@@ -1,6 +1,7 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events
 
-import dev.rubentxu.hodei.packages.domain.common.events.DomainEvent
+
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.DomainEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomDocument
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomFormat
 import java.time.Instant
@@ -73,5 +74,5 @@ data class SbomAnalysisCompletedEvent(
     val artifactId: String,
     val analysisType: String,
     val issues: Int,
-    val summaryData: Map<String, Any> = emptyMap()
+    val summaryData: Map<String, Object> = emptyMap()
 ) : SbomEvent()

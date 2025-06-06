@@ -1,11 +1,11 @@
 package dev.rubentxu.hodei.packages.application.sbom
 
-sealed class SbomError(open val message: String) {
-    data class ValidationFailed(val reason: String) : SbomError("Validation failed: $reason")
-    data class SbomNotFound(val sbomId: String) : SbomError("SBOM with ID '$sbomId' not found.")
-    data class ArtifactNotFound(val artifactId: String) : SbomError("Artifact with ID '$artifactId' not found.")
-    data class AnalysisFailed(override val message: String, val cause: Throwable? = null) : SbomError(message)
-    data class GenerationFailed(override val message: String, val cause: Throwable? = null) : SbomError(message)
-    data class RepositoryError(override val message: String, val cause: Throwable? = null) : SbomError(message)
-    data class UnexpectedError(override val message: String, val cause: Throwable? = null) : SbomError(message)
+sealed class SbomError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    class ValidationFailed(reason: String) : SbomError("Validation failed: $reason")
+    class SbomNotFound(sbomId: String) : SbomError("SBOM with ID '$sbomId' not found.")
+    class ArtifactNotFound(artifactId: String) : SbomError("Artifact with ID '$artifactId' not found.")
+    class AnalysisFailed(message: String, cause: Throwable? = null) : SbomError(message, cause)
+    class GenerationFailed(message: String, cause: Throwable? = null) : SbomError(message, cause)
+    class RepositoryError(message: String, cause: Throwable? = null) : SbomError(message, cause)
+    class UnexpectedError(message: String, cause: Throwable? = null) : SbomError(message, cause)
 }

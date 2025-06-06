@@ -4,77 +4,77 @@ import dev.rubentxu.hodei.packages.application.sbom.dto.CreateSbomRequest
 import dev.rubentxu.hodei.packages.application.sbom.dto.SbomAnalysisRequest
 import dev.rubentxu.hodei.packages.application.sbom.dto.SbomAnalysisResponse
 import dev.rubentxu.hodei.packages.application.sbom.dto.SbomDocumentResponse
-import dev.rubentxu.hodei.packages.application.shared.Result // Import custom Result
+
 
 /**
- * Interfaz del servicio de aplicación para operaciones SBOM.
- * Define las operaciones disponibles para la gestión de documentos SBOM.
+ * Application service interface for SBOM operations.
+ * Defines available operations for SBOM document management.
  */
 interface SbomService {
     /**
-     * Crea un nuevo documento SBOM a partir de la información proporcionada.
+     * Creates a new SBOM document from the provided information.
      *
-     * @param request Petición con la información necesaria para crear el documento SBOM
-     * @return Respuesta con el documento SBOM creado
+     * @param request Request with necessary information to create the SBOM document
+     * @return Result with the created SBOM document or failure with SbomError
      */
-    suspend fun createSbom(request: CreateSbomRequest): Result<SbomDocumentResponse, SbomError>
+    suspend fun createSbom(request: CreateSbomRequest): Result<SbomDocumentResponse>
 
     /**
-     * Genera un documento SBOM a partir del contenido de un artefacto.
-     * Este método analiza el contenido del artefacto y extrae automáticamente
-     * la información de componentes y dependencias.
+     * Generates an SBOM document from an artifact's content.
+     * This method analyzes the artifact content and automatically extracts
+     * component and dependency information.
      *
-     * @param artifactId ID del artefacto para el que generar el SBOM
-     * @param format Formato del SBOM (CYCLONE_DX, SPDX)
-     * @return Respuesta con el documento SBOM generado
+     * @param artifactId ID of the artifact to generate SBOM for
+     * @param format Format of SBOM (CYCLONE_DX, SPDX)
+     * @return Result with the generated SBOM document or failure with SbomError
      */
     suspend fun generateSbomFromArtifact(
         artifactId: String,
         format: String,
-    ): Result<SbomDocumentResponse, SbomError>
+    ): Result<SbomDocumentResponse>
 
     /**
-     * Obtiene un documento SBOM por su ID.
+     * Retrieves an SBOM document by its ID.
      *
-     * @param sbomId ID del documento SBOM a recuperar
-     * @return Respuesta con el documento SBOM solicitado
+     * @param sbomId ID of the SBOM document to retrieve
+     * @return Result with the requested SBOM document or failure with SbomError
      */
-    suspend fun getSbomById(sbomId: String): Result<SbomDocumentResponse, SbomError>
+    suspend fun getSbomById(sbomId: String): Result<SbomDocumentResponse>
 
     /**
-     * Obtiene todos los documentos SBOM asociados a un artefacto.
+     * Gets all SBOM documents associated with an artifact.
      *
-     * @param artifactId ID del artefacto
-     * @return Lista de documentos SBOM asociados al artefacto
+     * @param artifactId ID of the artifact
+     * @return Result with list of SBOM documents associated with the artifact or failure with SbomError
      */
-    suspend fun getSbomsByArtifactId(artifactId: String): Result<List<SbomDocumentResponse>, SbomError>
+    suspend fun getSbomsByArtifactId(artifactId: String): Result<List<SbomDocumentResponse>>
 
     /**
-     * Obtiene la versión más reciente del documento SBOM para un artefacto.
+     * Gets the most recent version of an SBOM document for an artifact.
      *
-     * @param artifactId ID del artefacto
-     * @param format Formato opcional del SBOM a filtrar
-     * @return Último documento SBOM del artefacto
+     * @param artifactId ID of the artifact
+     * @param format Optional format of the SBOM to filter by
+     * @return Result with the latest SBOM document of the artifact or failure with SbomError
      */
-    suspend fun getLatestSbomByArtifactId(artifactId: String, format: String? = null): Result<SbomDocumentResponse, SbomError>
+    suspend fun getLatestSbomByArtifactId(artifactId: String, format: String? = null): Result<SbomDocumentResponse>
 
     /**
-     * Busca documentos SBOM que contengan un componente específico.
+     * Searches for SBOM documents containing a specific component.
      *
-     * @param componentName Nombre del componente a buscar
-     * @param componentVersion Versión opcional del componente
-     * @return Lista de documentos SBOM que contienen el componente especificado
+     * @param componentName Name of the component to search for
+     * @param componentVersion Optional version of the component
+     * @return Result with list of SBOM documents containing the specified component or failure with SbomError
      */
     suspend fun findSbomsByComponent(
         componentName: String,
         componentVersion: String? = null,
-    ): Result<List<SbomDocumentResponse>, SbomError>
+    ): Result<List<SbomDocumentResponse>>
 
     /**
-     * Realiza un análisis de un documento SBOM (vulnerabilidades, licencias, etc).
+     * Performs an analysis of an SBOM document (vulnerabilities, licenses, etc).
      *
-     * @param request Detalles del análisis a realizar
-     * @return Resultado del análisis
+     * @param request Details of the analysis to perform
+     * @return Result with the analysis results or failure with SbomError
      */
-    suspend fun analyzeSbom(request: SbomAnalysisRequest): Result<SbomAnalysisResponse, SbomError>
+    suspend fun analyzeSbom(request: SbomAnalysisRequest): Result<SbomAnalysisResponse>
 }

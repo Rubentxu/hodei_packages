@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.ports.merkle
+package dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports
 
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.ContentHash
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.Signature

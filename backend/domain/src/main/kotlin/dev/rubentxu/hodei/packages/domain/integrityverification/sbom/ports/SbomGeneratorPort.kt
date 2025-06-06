@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.ports.sbom
+package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.ports
 
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomDocument
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomFormat

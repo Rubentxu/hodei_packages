@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.integrityverification.vex.model
+package dev.rubentxu.hodei.packages.domain.integrityverification.vex.model.VexDocument
 
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactId
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomId

@@ -1,8 +1,8 @@
 package dev.rubentxu.hodei.packages.application.events.handlers
 
 import dev.rubentxu.hodei.packages.domain.identityaccess.events.AuthEvent
-import dev.rubentxu.hodei.packages.domain.model.AdminUser
-import dev.rubentxu.hodei.packages.domain.ports.security.UserRepository
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
