@@ -3,6 +3,16 @@ plugins {
     alias(libs.plugins.kotlin.serialization) // If using kotlinx.serialization for DB DTOs etc.
 }
 
+// Configure JUnit Platform for Kotest
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("started", "passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+    }
+}
+
 dependencies {
     implementation(project(":backend:domain"))
 
@@ -16,6 +26,9 @@ dependencies {
 
     // JWT - Auth0
     implementation("com.auth0:java-jwt:4.4.0")
+
+    // Password Hashing - jBCrypt
+    implementation("org.mindrot:jbcrypt:0.4")
 
     // Testing
     testImplementation(kotlin("test-junit5"))
