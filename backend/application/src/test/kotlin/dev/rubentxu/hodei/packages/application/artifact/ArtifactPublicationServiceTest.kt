@@ -1,5 +1,7 @@
 package dev.rubentxu.hodei.packages.application.artifact
 
+import dev.rubentxu.hodei.packages.application.artifactmanagement.service.ArtifactPublicationService
+import dev.rubentxu.hodei.packages.application.artifactmanagement.service.PublishArtifactCommand
 import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
 import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactCoordinates
 import dev.rubentxu.hodei.packages.domain.model.artifact.UserId

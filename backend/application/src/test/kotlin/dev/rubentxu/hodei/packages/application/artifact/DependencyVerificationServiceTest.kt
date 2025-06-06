@@ -1,5 +1,8 @@
 package dev.rubentxu.hodei.packages.application.artifact
 
+import dev.rubentxu.hodei.packages.application.artifactmanagement.service.DependencyVerificationService
+import dev.rubentxu.hodei.packages.application.artifactmanagement.service.VerificationResult
+import dev.rubentxu.hodei.packages.application.artifactmanagement.service.VerifyDependencyCommand
 import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactId
 import dev.rubentxu.hodei.packages.domain.model.sbom.SbomId
 import dev.rubentxu.hodei.packages.domain.model.sbom.DomainVulnerabilityInfo

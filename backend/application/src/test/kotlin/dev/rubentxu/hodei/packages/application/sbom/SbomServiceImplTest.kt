@@ -1,5 +1,12 @@
 package dev.rubentxu.hodei.packages.application.sbom
 
+import dev.rubentxu.hodei.packages.application.integrityverification.dto.CreateSbomRequest
+import dev.rubentxu.hodei.packages.application.integrityverification.dto.GenerateSbomFromArtifactRequest
+import dev.rubentxu.hodei.packages.application.integrityverification.dto.SbomAnalysisRequest
+import dev.rubentxu.hodei.packages.application.integrityverification.dto.SbomAnalysisResponse
+import dev.rubentxu.hodei.packages.application.integrityverification.dto.SbomDocumentResponse
+import dev.rubentxu.hodei.packages.application.integrityverification.dto.SbomError
+import dev.rubentxu.hodei.packages.application.integrityverification.service.SbomServiceImpl
 import dev.rubentxu.hodei.packages.application.sbom.dto.*
 import dev.rubentxu.hodei.packages.application.shared.Result as SharedAppResult
 import dev.rubentxu.hodei.packages.domain.events.EventPublisher

@@ -1,5 +1,7 @@
 package dev.rubentxu.hodei.packages.application.audit
 
+import dev.rubentxu.hodei.packages.application.integrityverification.service.AuditReport
+import dev.rubentxu.hodei.packages.application.integrityverification.service.SupplyChainAuditService
 import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactId
 import dev.rubentxu.hodei.packages.domain.model.attestation.Attestation
 import io.kotest.core.spec.style.BehaviorSpec

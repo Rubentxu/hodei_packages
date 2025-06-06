@@ -1,6 +1,10 @@
 package dev.rubentxu.hodei.packages.application.auth
 
-import dev.rubentxu.hodei.packages.application.auth.AuthServiceError.AdminAlreadyExists
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.LoginCommand
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.RegisterAdminCommand
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServiceError
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServiceError.AdminAlreadyExists
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServiceImpl
 import dev.rubentxu.hodei.packages.domain.ports.security.PasswordHasher
 import dev.rubentxu.hodei.packages.domain.ports.security.TokenService
 import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser

@@ -6,7 +6,11 @@ import org.koin.core.context.stopKoin
 import dev.rubentxu.hodei.packages.app.features.auth.model.*
 import dev.rubentxu.hodei.packages.app.features.auth.routes.authRoutes
 import dev.rubentxu.hodei.packages.application.auth.*
-import dev.rubentxu.hodei.packages.application.shared.Result
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.AuthenticationResult
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.LoginCommand
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.RegisterAdminCommand
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthService
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServiceError
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -179,7 +183,14 @@ class AuthRoutesTest {
         }
 
         coEvery { authService.login(any<LoginCommand>()) } returns
-                Result.success(AuthenticationResult(username = "testUser", email = "user@example.com", token = "user_token", message = "Login successful"))
+                Result.success(
+                    AuthenticationResult(
+                        username = "testUser",
+                        email = "user@example.com",
+                        token = "user_token",
+                        message = "Login successful"
+                    )
+                )
 
         val client = createClient {
             install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {

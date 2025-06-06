@@ -3,9 +3,11 @@ package dev.rubentxu.hodei.packages.app.features.auth.routes
 import dev.rubentxu.hodei.packages.app.features.auth.model.AuthResponse
 import dev.rubentxu.hodei.packages.app.features.auth.model.ErrorResponse
 import dev.rubentxu.hodei.packages.app.features.auth.model.RegisterFirstAdminRequest
-import dev.rubentxu.hodei.packages.application.auth.AuthService
-import dev.rubentxu.hodei.packages.application.auth.AuthServiceError
-import dev.rubentxu.hodei.packages.application.auth.RegisterAdminCommand
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthService
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.AuthenticationResult
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.LoginCommand
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServiceError
+import dev.rubentxu.hodei.packages.application.identityaccess.dto.RegisterAdminCommand
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -53,10 +55,10 @@ fun Route.loginRouting(authService: AuthService) {
     post("/login") {
         val request = call.receive<dev.rubentxu.hodei.packages.app.features.auth.model.LoginRequest>()
         when (val result = authService.login(request.toCommand())) {
-            is dev.rubentxu.hodei.packages.application.shared.Result.Success<dev.rubentxu.hodei.packages.application.auth.AuthenticationResult> -> {
+            is dev.rubentxu.hodei.packages.application.shared.Result.Success<AuthenticationResult> -> {
                 call.respond(HttpStatusCode.OK, AuthResponse("Login successful"))
             }
-            is dev.rubentxu.hodei.packages.application.shared.Result.Failure<dev.rubentxu.hodei.packages.application.auth.AuthServiceError> -> {
+            is dev.rubentxu.hodei.packages.application.shared.Result.Failure<AuthServiceError> -> {
                 call.respond(HttpStatusCode.Unauthorized, ErrorResponse("Invalid credentials"))
             }
         }
@@ -67,6 +69,6 @@ fun RegisterFirstAdminRequest.toCommand(): RegisterAdminCommand {
     return RegisterAdminCommand(username, email, password)
 }
 
-fun dev.rubentxu.hodei.packages.app.features.auth.model.LoginRequest.toCommand(): dev.rubentxu.hodei.packages.application.auth.LoginCommand {
-    return dev.rubentxu.hodei.packages.application.auth.LoginCommand(usernameOrEmail, password)
+fun dev.rubentxu.hodei.packages.app.features.auth.model.LoginRequest.toCommand(): LoginCommand {
+    return LoginCommand(usernameOrEmail, password)
 }

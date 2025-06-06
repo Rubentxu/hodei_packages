@@ -1,5 +1,7 @@
 package dev.rubentxu.hodei.packages.application.policy
 
+import dev.rubentxu.hodei.packages.application.policymanagement.service.PolicyEnforcementResult
+import dev.rubentxu.hodei.packages.application.policymanagement.service.SecurityPolicyService
 import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
 import dev.rubentxu.hodei.packages.domain.model.policy.PolicyId
 import dev.rubentxu.hodei.packages.domain.model.policy.SecurityPolicy

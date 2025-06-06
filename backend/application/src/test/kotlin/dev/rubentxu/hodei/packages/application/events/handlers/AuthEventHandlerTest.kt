@@ -1,5 +1,6 @@
 package dev.rubentxu.hodei.packages.application.events.handlers
 
+import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthEventHandler
 import dev.rubentxu.hodei.packages.domain.identityaccess.events.AuthEvent
 import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
