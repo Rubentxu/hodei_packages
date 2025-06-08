@@ -1,28 +1,36 @@
 package dev.rubentxu.hodei.packages.domain.artifactmanagement.model
 
 import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+import dev.rubentxu.hodei.packages.domain.integrityverification.attestation.model.Attestation
+import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.SbomDocument
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.Instant
 
-// Assuming UserId and ArtifactStatus are defined elsewhere, e.g.:
-// @JvmInline value class UserId(val value: String)
-// enum class ArtifactStatus { ACTIVE, DEPRECATED, DELETED }
 
 /**
- * Represents a software artifact's core information as stored in the registry.
- * This model focuses on the essential identifying and structural properties of an artifact.
- * For more detailed descriptive metadata, see [ArtifactMetadata].
+ * Represents a specific version of a software artifact as stored and managed in the registry.
+ * This model focuses on the essential identifying, structural, and lifecycle properties
+ * of a particular artifact version. It is the primary entity that is published,
+ * downloaded, and has its lifecycle managed (e.g., ACTIVE, DEPRECATED).
  *
- * @property id Unique identifier for the artifact within this registry.
- * @property coordinates The logical coordinates (group, name, version, classifier, extension) identifying the artifact.
- * @property tags Optional list of keywords or tags associated with the artifact for discovery.
- * @property packagingType Optional. The specific file format or packaging of the artifact's primary file (e.g., "jar", "tgz", "whl", "crate").
- *                         This describes the physical file format, distinct from `ArtifactCoordinates.extension` which is part of the logical ID.
- * @property sizeInBytes Optional. Size of the artifact's primary file in bytes.
- * @property status The current lifecycle status of the artifact (e.g., ACTIVE, DEPRECATED). Defaults to ACTIVE.
- * @property metadata Optional. A flexible map for storing additional, ecosystem-specific key-value metadata not covered by other fields.
- * @property dependencies Optional. List of logical coordinates of artifacts that this artifact depends on.
+ * @property id Unique identifier for this specific artifact version within the registry.
+ * @property contentHash The cryptographic hash of this artifact version's primary content.
+ *                       Ensures integrity and supports content-addressable storage.
+ * @property coordinates The logical coordinates (group, name, version, classifier, extension)
+ *                       that uniquely identify this artifact version.
+ * @property tags Optional list of keywords or tags associated with this artifact version
+ *                for enhanced discoverability or categorization.
+ * @property packagingType Optional. The specific file format or packaging of this artifact version's
+ *                         primary file (e.g., "jar", "tar.gz", "whl", "rpm", "docker-image-manifest-v2").
+ *                         This describes the physical file format, distinct from
+ *                         `ArtifactCoordinates.extension` which is part of the logical ID.
+ * @property sizeInBytes Optional. Size of this artifact version's primary file in bytes.
+ * @property status The current lifecycle status of this artifact version (e.g., ACTIVE, SNAPSHOT, DEPRECATED).
+ *                  Defaults to ACTIVE for newly published, non-pending artifacts.
+ * @property metadata Holds detailed descriptive and provenance metadata specifically for this artifact version.
+ * @property dependencies Optional. List of logical coordinates of other artifacts that this
+ *                        artifact version directly depends on.
  */
 data class Artifact(
     val id: ArtifactId,
@@ -31,10 +39,38 @@ data class Artifact(
     val tags: List<String>? = null,
     val packagingType: String? = null,
     val sizeInBytes: Long? = null,
-    val status: ArtifactStatus = ArtifactStatus.ACTIVE, // Assuming ArtifactStatus enum is defined
+    val status: ArtifactStatus = ArtifactStatus.ACTIVE,
     val metadata: ArtifactMetadata,
-    val dependencies: List<ArtifactCoordinates>? = null
+    val dependencies: List<ArtifactDependency>? = emptyList(),
 )
+
+/**
+ * Represents a "release package" or a "chain integrity bundle" for a specific [Artifact].
+ * This structure explicitly associates an artifact version with its release date,
+ * Software Bill of Materials (SBOM), and any relevant attestations.
+ * It's designed to be a comprehensive, verifiable unit for software supply chain security.
+ *
+ * @property artifact The specific [Artifact] version this release information pertains to.
+ *                    This contains the core identity, content, and metadata of the artifact version.
+ * @property releaseDate The date and time when this artifact version was officially released or made available.
+ *                       This might differ from `artifact.metadata.createdAt` if there's a distinction
+ *                       between initial creation/upload and official release.
+ * @property sbom The Software Bill of Materials (SBOM) document associated with this artifact version.
+ *                It details the components and dependencies of the artifact.
+ * @property attestations A list of [Attestation] objects that provide evidence or verification
+ *                        about the artifact version (e.g., signatures, build provenance, scan results).
+ *                        Defaults to an empty list if no attestations are present.
+ */
+data class ArtifactRelease(
+    val artifact: Artifact,
+    val releaseDate: Instant, // Consider renaming to publishedAt for consistency if it means public availability
+    val sbom: SbomDocument,
+    val attestations: List<Attestation> = emptyList()
+    // Consider adding:
+    // val releaseId: ArtifactReleaseId? = null, // A unique ID for this release bundle itself, if needed for tracking
+    // val releaseNotesUrl: String? = null, // Link to release notes specific to this release event
+)
+
 
 /**
  * Represents the cryptographic hash of an artifact's content.
@@ -85,7 +121,6 @@ data class ArtifactMetadata(
     val id: ArtifactId,
     val createdBy: UserId, // Assuming UserId type is defined
     val createdAt: Instant,
-    val updatedAt: Instant = createdAt,
     val description: String? = null,
     val licenses: List<String>? = null,
     val homepageUrl: String? = null,
@@ -195,7 +230,8 @@ data class ArtifactCoordinates(
     val name: String,
     val version: ArtifactVersion,
     val classifier: ArtifactClassifier = ArtifactClassifier.NONE,
-    val extension: ArtifactExtension = ArtifactExtension.NONE
+    val extension: ArtifactExtension = ArtifactExtension.NONE,
+    val scope: String? = null
 ) {
     init {
         // It's crucial that the name is not blank, as it's a primary identifier.

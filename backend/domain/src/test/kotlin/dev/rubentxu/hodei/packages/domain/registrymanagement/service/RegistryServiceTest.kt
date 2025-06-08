@@ -11,7 +11,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.result.shouldBeFailure
 import io.kotest.matchers.result.shouldBeSuccess
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -59,7 +58,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.existsByName(command.name) } returns Result.success(false)
             coEvery { registryRepository.save(any()) } answers { Result.success(firstArg()) }
 
-            val result = registryService.handle(command)
+            val result = registryService.createHostedRegistry(command)
 
             result.shouldBeSuccess { registry ->
                 registry.shouldBeInstanceOf<HostedRegistry>()
@@ -96,7 +95,7 @@ class RegistryServiceTest : StringSpec({
             )
             coEvery { registryRepository.existsByName(command.name) } returns Result.success(true)
 
-            val result = registryService.handle(command)
+            val result = registryService.createHostedRegistry(command)
 
             result.shouldBeFailure {
                 it.shouldBeInstanceOf<IllegalStateException>()
@@ -122,7 +121,7 @@ class RegistryServiceTest : StringSpec({
             // This mock simulates the repository itself returning a failure Result
             coEvery { registryRepository.existsByName(command.name) } returns Result.failure(dbError)
 
-            val result = registryService.handle(command)
+            val result = registryService.createHostedRegistry(command)
 
             result.shouldBeFailure {
                 // The exception 'it' in shouldBeFailure is the one directly from the Result.failure.
@@ -150,7 +149,7 @@ class RegistryServiceTest : StringSpec({
             // This mock simulates the repository save operation returning a failure Result
             coEvery { registryRepository.save(any()) } returns Result.failure(saveError)
 
-            val result = registryService.handle(command)
+            val result = registryService.createHostedRegistry(command)
 
             result.shouldBeFailure {
                 // When registryRepository.save returns a Result.failure,
@@ -179,7 +178,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.existsByName(command.name) } returns Result.success(false)
             coEvery { registryRepository.save(any()) } answers { Result.success(firstArg()) }
 
-            val result = registryService.handle(command)
+            val result = registryService.createProxyRegistry(command)
 
             result.shouldBeSuccess { registry ->
                 registry.shouldBeInstanceOf<ProxyRegistry>()
@@ -208,7 +207,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.existsByName(command.name) } returns Result.success(false)
             coEvery { registryRepository.save(any()) } answers { Result.success(firstArg()) }
 
-            val result = registryService.handle(command)
+            val result = registryService.createGroupRegistry(command)
 
             result.shouldBeSuccess { registry ->
                 registry.shouldBeInstanceOf<GroupRegistry>()
@@ -248,7 +247,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.findById(repoId) } returns Result.success(existingRepo)
             coEvery { registryRepository.save(any()) } answers { Result.success(firstArg()) }
 
-            val result = registryService.handle(command)
+            val result = registryService.updateRegistry(command)
 
             result.shouldBeSuccess { updatedRegistry ->
                 updatedRegistry.shouldBeInstanceOf<HostedRegistry>()
@@ -285,7 +284,7 @@ class RegistryServiceTest : StringSpec({
             val command = UpdateRegistryCommand(registryId = repoId, description = "New desc", requestedBy = testUserId)
             coEvery { registryRepository.findById(repoId) } returns Result.success(null)
 
-            val result = registryService.handle(command)
+            val result = registryService.updateRegistry(command)
 
             result.shouldBeFailure {
                 it.shouldBeInstanceOf<IllegalArgumentException>()
@@ -313,7 +312,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.findById(repoId) } returns Result.success(existingRepo)
             coEvery { registryRepository.save(any()) } answers { Result.success(firstArg()) } // Save might be called
 
-            val result = registryService.handle(command)
+            val result = registryService.updateRegistry(command)
             result.shouldBeSuccess()
 
             verify(exactly = 0) { eventPublisher(any()) } // No event
@@ -333,7 +332,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.findById(repoId) } returns Result.success(existingRepo)
             coEvery { registryRepository.deleteById(repoId) } returns Result.success(true)
 
-            val result = registryService.handle(command)
+            val result = registryService.deleteRegistry(command)
 
             result.shouldBeSuccess { it shouldBe true }
             coVerify { registryRepository.deleteById(repoId) }
@@ -354,7 +353,7 @@ class RegistryServiceTest : StringSpec({
             val command = DeleteRegistryCommand(registryId = repoId, requestedBy = testUserId)
             coEvery { registryRepository.findById(repoId) } returns Result.success(null)
 
-            val result = registryService.handle(command)
+            val result = registryService.deleteRegistry(command)
 
             result.shouldBeSuccess { it shouldBe false }
             coVerify(exactly = 0) { registryRepository.deleteById(any()) }
@@ -373,7 +372,7 @@ class RegistryServiceTest : StringSpec({
             coEvery { registryRepository.findById(repoId) } returns Result.success(existingRepo)
             coEvery { registryRepository.deleteById(repoId) } returns Result.success(false)
 
-            val result = registryService.handle(command)
+            val result = registryService.deleteRegistry(command)
 
             result.shouldBeSuccess { it shouldBe false }
             verify(exactly = 0) { eventPublisher(any()) }
@@ -405,7 +404,7 @@ class RegistryServiceTest : StringSpec({
             )
             coEvery { registryRepository.findAll(format) } returns Result.success(expectedRepos)
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistriesByFormat(command)
 
             result.shouldBeSuccess {
                 it shouldBe expectedRepos
@@ -419,7 +418,7 @@ class RegistryServiceTest : StringSpec({
             val command = FindRegistriesByFormatCommand(format = format, requestedBy = testUserId)
             coEvery { registryRepository.findAll(format) } returns Result.success(emptyList())
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistriesByFormat(command)
 
             result.shouldBeSuccess {
                 it.shouldBeEmpty()
@@ -440,7 +439,7 @@ class RegistryServiceTest : StringSpec({
             )
             coEvery { registryRepository.findById(repoId) } returns Result.success(expectedRepo)
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistryById(command)
 
             result.shouldBeSuccess {
                 it shouldBe expectedRepo
@@ -454,7 +453,7 @@ class RegistryServiceTest : StringSpec({
             val command = FindRegistryByIdCommand(registryId = repoId, requestedBy = testUserId)
             coEvery { registryRepository.findById(repoId) } returns Result.success(null)
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistryById(command)
 
             result.shouldBeSuccess {
                 it shouldBe null
@@ -477,7 +476,7 @@ class RegistryServiceTest : StringSpec({
             )
             coEvery { registryRepository.findByName(name) } returns Result.success(expectedRepo)
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistryByName(command)
 
             result.shouldBeSuccess {
                 it shouldBe expectedRepo
@@ -491,7 +490,7 @@ class RegistryServiceTest : StringSpec({
             val command = FindRegistryByNameCommand(name = name, requestedBy = testUserId)
             coEvery { registryRepository.findByName(name) } returns Result.success(null)
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistryByName(command)
 
             result.shouldBeSuccess {
                 it shouldBe null
@@ -507,7 +506,7 @@ class RegistryServiceTest : StringSpec({
             // This mock simulates the repository itself returning a failure Result
             coEvery { registryRepository.findById(repoId) } returns Result.failure(dbError)
 
-            val result = registryService.handle(command)
+            val result = registryService.findRegistryById(command)
 
             result.shouldBeFailure {
                 // In the find operations, if the repository returns a Result.failure,

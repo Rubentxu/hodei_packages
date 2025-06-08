@@ -10,7 +10,7 @@ import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.*
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.ArtifactRepository
 import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import dev.rubentxu.hodei.packages.domain.registrymanagement.model.*
-import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.FormatHandler
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.FormatHandler
 import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.RegistryRepository
 import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.StorageService
 import java.time.Instant
@@ -25,7 +25,7 @@ import java.time.Instant
  * @property artifactRepository Port for artifact data persistence.
  * @property registryRepository Port for registry metadata persistence.
  * @property storageService Port for artifact content storage and hashing.
- * @property handlers A map of [ArtifactType] (o RegistryFormat) to their respective [FormatHandler] implementations.
+ * @property handlers A map of [ArtifactType] to their respective [FormatHandler] implementations.
  * @property publishArtifactEvent Callback to publish an [ArtifactPublishedEvent].
  * @property publishDownloadEvent Callback to publish an [ArtifactDownloadedEvent].
  * @property publishMetadataUpdateEvent Callback to publish an [ArtifactMetadataUpdatedEvent].
@@ -40,20 +40,24 @@ class ArtifactService(
     private val publishDownloadEvent: (ArtifactDownloadedEvent) -> Unit,
     private val publishMetadataUpdateEvent: (ArtifactMetadataUpdatedEvent) -> Unit,
     private val publishDeleteEvent: (ArtifactDeletedEvent) -> Unit
-) {
+): ArtifactServicePort {
 
-    suspend fun uploadArtifact(
-        command: UploadArtifactCommand // Argumento único
+    override suspend fun uploadArtifact(
+        command: UploadArtifactCommand // Asumiendo que UploadArtifactCommand tiene:
+                                      // registryId: RegistryId, filename: String, content: ByteArray,
+                                      // artifactType: ArtifactType,
+                                      // providedUserMetadata: Map<String, String>?, (nuevo nombre y tipo)
+                                      // uploaderUserId: UserId (nuevo nombre)
     ): Result<Artifact> {
         try {
             // 1. Validate Registry
             val registry = registryRepository.findById(command.registryId).getOrElse {
                 return Result.failure(
-                    it
-                        ?: IllegalStateException("Failed to retrieve registry ${command.registryId} due to an unknown error.")
+                    it ?: IllegalStateException("Failed to retrieve registry ${command.registryId} due to an unknown error.")
                 )
             } ?: return Result.failure(IllegalArgumentException("Registry with ID '${command.registryId}' not found."))
 
+            // Asumiendo que registryRepository.isRepositoryActive existe y es relevante
             if (!registryRepository.isRepositoryActive(command.registryId)) {
                 return Result.failure(IllegalStateException("Registry '${registry.name}' (ID: ${command.registryId}) is not active."))
             }
@@ -70,7 +74,8 @@ class ArtifactService(
             val handler = handlers[command.artifactType]
                 ?: return Result.failure(UnsupportedOperationException("ArtifactType '${command.artifactType}' not supported by any registered FormatHandler."))
 
-            val parsedCoordinates = handler.parseCoordinates(command.filename, command.content).getOrElse {
+            val extractCoordinatesResult = handler.extractCoordinates(command.filename, command.content, command.providedUserMetadata)
+            val (parsedCoordinates, _) = extractCoordinatesResult.getOrElse {
                 return Result.failure(
                     IllegalArgumentException(
                         "Failed to parse artifact coordinates from '${command.filename}' using handler for ${command.artifactType}: ${it.message}",
@@ -78,17 +83,9 @@ class ArtifactService(
                     )
                 )
             }
-            // handlerParsedRawMetadata se usa para campos que no están en ArtifactMetadata (ej. tags)
-            val handlerParsedRawMetadata =
-                handler.parseMetadata(command.content).getOrElse { // Devuelve Map<String, String>
-                    return Result.failure(
-                        IllegalArgumentException(
-                            "Failed to parse metadata from content for '${command.filename}' using handler for ${command.artifactType}: ${it.message}",
-                            it
-                        )
-                    )
-                }
-            val packagingType = handler.getPackagingType(command.filename, command.content).getOrElse {
+
+            val determinePackagingTypeResult = handler.determinePackagingType(command.filename, command.content)
+            val (packagingType, _) = determinePackagingTypeResult.getOrElse {
                 return Result.failure(
                     IllegalArgumentException(
                         "Failed to determine packaging type for '${command.filename}' using handler for ${command.artifactType}: ${it.message}",
@@ -98,6 +95,8 @@ class ArtifactService(
             }
 
             // 3. Content Hashing & Size
+            // Manteniendo la lógica original de storageService. Si StorageService.storeContent(ByteArray) devuelve ContentHash y almacena,
+            // esta sección se simplificaría.
             val contentHash = storageService.calculateHash(command.content)
             val sizeInBytes = command.content.size.toLong()
 
@@ -105,44 +104,59 @@ class ArtifactService(
             artifactRepository.findByCoordinates(parsedCoordinates).fold(
                 onSuccess = { existingArtifact ->
                     if (existingArtifact != null) {
-                        val coordsString =
-                            "${parsedCoordinates.group.value}:${parsedCoordinates.name}:${parsedCoordinates.version.value}"
-                        return Result.failure(IllegalStateException("Artifact $coordsString already exists."))
+                        return Result.failure(IllegalStateException("Artifact ${parsedCoordinates.toString()} already exists."))
                     }
                 },
                 onFailure = { return Result.failure(it) }
             )
 
             // 5. Create Artifact instance
-            val artifactId = ArtifactId(java.util.UUID.randomUUID().toString())
+            val artifactId = ArtifactId(java.util.UUID.randomUUID().toString()) // O alguna otra forma de generar ArtifactId
 
-            // Utiliza command.providedMetadata, pero asegura que los campos controlados por el servicio (id, createdBy, timestamps)
-            // sean establecidos correctamente por el servicio.
-            val initialArtifactMetadata = command.providedMetadata.copy(
-                id = artifactId,
-                createdBy = command.createdBy,
-                createdAt = Instant.now(),
-                updatedAt = Instant.now(), // En la creación, updatedAt es igual a createdAt
-                // El sizeInBytes en metadata puede tomarse del comando o del contenido real.
-                // Es preferible usar el tamaño real del contenido.
-                sizeInBytes = sizeInBytes
+            val extractMetadataResult = handler.extractMetadataWithSources(
+                filename = command.filename,
+                content = command.content,
+                providedMetadata = command.providedUserMetadata,
+                artifactId = artifactId,
+                userId = command.uploaderUserId
             )
+            val artifactMetadataWithSources = extractMetadataResult.getOrElse {
+                return Result.failure(
+                    IllegalArgumentException(
+                        "Failed to extract metadata for '${command.filename}' using handler for ${command.artifactType}: ${it.message}",
+                        it
+                    )
+                )
+            }
+            val finalMetadata = artifactMetadataWithSources.toArtifactMetadata()
+
+            val extractDependenciesResult = handler.extractDependencies(command.content)
+            val dependencies = extractDependenciesResult.getOrElse {
+                return Result.failure(
+                    IllegalArgumentException(
+                        "Failed to extract dependencies for '${command.filename}' using handler for ${command.artifactType}: ${it.message}",
+                        it
+                    )
+                )
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            val tags = artifactMetadataWithSources.additionalMetadata["tags"]?.value as? List<String>
 
             val artifact = Artifact(
                 id = artifactId,
                 contentHash = contentHash,
                 coordinates = parsedCoordinates,
-                // Los tags se pueden extraer del mapa parseado por el handler si no son parte de ArtifactMetadata
-                tags = handlerParsedRawMetadata["tags"]?.split(',')?.map { it.trim() },
+                tags = tags,
                 packagingType = packagingType,
-                sizeInBytes = sizeInBytes, // Tamaño real del contenido
-                status = ArtifactStatus.ACTIVE,
-                metadata = initialArtifactMetadata, // El objeto ArtifactMetadata construido
-                dependencies = null // Las dependencias podrían parsearse del handlerParsedRawMetadata
+                sizeInBytes = sizeInBytes, // Usar el tamaño real del contenido. finalMetadata.sizeInBytes es el de metadatos.
+                status = ArtifactStatus.ACTIVE, // O determinar según política/comando
+                metadata = finalMetadata,
+                dependencies = dependencies.takeIf { it.isNotEmpty() }
             )
 
             // 6. Store Content physically
-            storageService.store(command.content).getOrElse {
+            storageService.store(command.content).getOrElse { // Manteniendo la lógica original de store(ByteArray)
                 return Result.failure(
                     RuntimeException(
                         "Failed to store artifact content for ${artifact.coordinates}: ${it.message}",
@@ -158,7 +172,7 @@ class ArtifactService(
                         ArtifactPublishedEvent(
                             artifactId = savedArtifact.id,
                             publishedAt = Instant.now(),
-                            publishedBy = command.createdBy
+                            publishedBy = command.uploaderUserId
                         )
                     )
                     Result.success(savedArtifact)
@@ -169,7 +183,7 @@ class ArtifactService(
             )
 
         } catch (e: Exception) {
-            return Result.failure(RuntimeException("Failed to upload artifact: ${e.message}", e))
+            return Result.failure(RuntimeException("Failed to upload artifact '${command.filename}': ${e.message}", e))
         }
     }
 
@@ -208,11 +222,11 @@ class ArtifactService(
      * @param userAgent The optional user agent string of the client.
      * @return A [Result] containing the [Artifact] metadata if found, or an error.
      */
-    suspend fun downloadArtifact(
+    override suspend fun downloadArtifact(
         artifactId: ArtifactId,
-        downloadedBy: UserId? = null,
-        clientIp: String? = null,
-        userAgent: String? = null
+        downloadedBy: UserId?,
+        clientIp: String?,
+        userAgent: String?
     ): Result<Artifact> {
         return artifactRepository.findById(artifactId).fold(
             onSuccess = { artifact ->
@@ -249,7 +263,7 @@ class ArtifactService(
      * @param contentHash The [ContentHash] of the artifact to retrieve.
      * @return A [Result] containing the [ByteArray] content if successful, or an error.
      */
-    suspend fun retrieveArtifactContent(
+    override suspend fun retrieveArtifactContent(
         registryId: RegistryId,
         contentHash: ContentHash
     ): Result<ByteArray> {
@@ -260,11 +274,12 @@ class ArtifactService(
         }
             ?: return Result.failure(IllegalArgumentException("Registry with ID '$registryId' not found for content retrieval."))
 
+        // Asumiendo que registryRepository.isRepositoryActive existe y es relevante
         if (!registryRepository.isRepositoryActive(registryId)) {
             return Result.failure(IllegalStateException("Registry '${registry.name}' (ID: $registryId) is not active for content retrieval."))
         }
 
-        return storageService.retrieve(contentHash).fold(
+        return storageService.retrieve(contentHash).fold( // Asumiendo storageService.retrieve(ContentHash)
             onSuccess = { contentBytes -> Result.success(contentBytes) },
             onFailure = { exception ->
                 Result.failure(
@@ -288,12 +303,12 @@ class ArtifactService(
      * @return A [Result] containing `true` if the artifact was successfully deleted,
      *         `false` if it did not exist (idempotent), or an error.
      */
-    suspend fun deleteArtifact(artifactId: ArtifactId, deletedBy: UserId): Result<Boolean> {
+    override suspend fun deleteArtifact(artifactId: ArtifactId, deletedBy: UserId): Result<Boolean> {
         val findResult = artifactRepository.findById(artifactId)
         val artifactToDelete = findResult.getOrElse { return Result.failure(it) }
 
         if (artifactToDelete == null) {
-            return Result.success(false)
+            return Result.success(false) // Idempotent: artifact not found, considered "deleted"
         }
         // TODO: Add policy checks from the repository before allowing deletion.
 
@@ -324,7 +339,7 @@ class ArtifactService(
      * @param name The name of the artifact.
      * @return A [Result] containing a list of [Artifact] objects for all versions, or an error.
      */
-    suspend fun getAllVersions(
+    override suspend fun getAllVersions(
         group: String,
         name: String
     ): Result<List<Artifact>> {
@@ -342,12 +357,9 @@ class ArtifactService(
      * @return A [Result] containing the [Artifact] if found, or `null` if not found,
      *         or an error if the lookup fails.
      */
-    suspend fun getArtifact(
+    override suspend fun getArtifact(
         artifactCoordinates: ArtifactCoordinates
     ): Result<Artifact?> {
-        // The ArtifactCoordinates object is expected to have a specific version
-        // due to the constructor constraints of ArtifactVersion.
-        // This method now directly fetches an artifact by its exact coordinates.
         return artifactRepository.findByCoordinates(artifactCoordinates)
     }
 
@@ -356,7 +368,6 @@ class ArtifactService(
      * The provided [newMetadataValues] object should contain the desired new state for the
      * descriptive fields of the artifact's metadata.
      * Immutable fields like original `createdBy` and `createdAt` are preserved from the existing record.
-     * The `updatedAt` field will be set to the current time.
      *
      * @param artifactId The [ArtifactId] of the artifact to update.
      * @param newMetadataValues An [ArtifactMetadata] object containing the new values for the descriptive metadata fields.
@@ -365,9 +376,9 @@ class ArtifactService(
      * @param updatedBy The [UserId] of the user performing the update, used for eventing.
      * @return A [Result] containing the updated [Artifact] if successful, or an error.
      */
-    suspend fun updateArtifactMetadata(
+    override suspend fun updateArtifactMetadata(
         artifactId: ArtifactId,
-        newMetadataValues: ArtifactMetadata, // Parámetro cambiado a ArtifactMetadata
+        newMetadataValues: ArtifactMetadata,
         updatedBy: UserId
     ): Result<Artifact> {
         return artifactRepository.findById(artifactId).fold(
@@ -381,28 +392,26 @@ class ArtifactService(
 
                     // Create the updated ArtifactMetadata, preserving immutable fields from the existing one
                     // and taking descriptive fields from newMetadataValues.
+                    // Note: ArtifactMetadata does not have an 'updatedAt' field.
+                    // The 'id', 'createdBy', 'createdAt' from newMetadataValues are ignored here,
+                    // as they are taken from the existingPersistedMetadata by the .copy() mechanism.
                     val updatedPersistedMetadata = existingPersistedMetadata.copy(
                         description = newMetadataValues.description,
                         licenses = newMetadataValues.licenses,
                         homepageUrl = newMetadataValues.homepageUrl,
                         repositoryUrl = newMetadataValues.repositoryUrl,
-                        checksums = newMetadataValues.checksums,
-                        sizeInBytes = newMetadataValues.sizeInBytes, // Assuming this is the new desired value for metadata's size
-                        updatedAt = now // Service sets the update timestamp
-                        // id, createdBy, createdAt are implicitly taken from existingPersistedMetadata by .copy()
-                        // as they are not specified here, thus preserving their original values.
+                        sizeInBytes = newMetadataValues.sizeInBytes, // Update size if provided
+                        checksums = newMetadataValues.checksums    // Update checksums if provided
                     )
 
                     val updatedArtifact = artifact.copy(
                         metadata = updatedPersistedMetadata
-                        // Potentially update other Artifact fields if newMetadataValues implies changes to them,
-                        // though this function is primarily for Artifact.metadata.
+                        // Consider if other Artifact fields (e.g., tags, status) should be updatable here
+                        // or via separate service methods. For now, only metadata is updated.
                     )
 
                     artifactRepository.save(updatedArtifact).fold(
                         onSuccess = { savedArtifact ->
-                            // Construct a map representing the changes or the new state for the event.
-                            // This map should only contain non-null String values as per common event practices.
                             val changesForEvent = buildMap<String, String> {
                                 newMetadataValues.description?.let { put("description", it) }
                                 newMetadataValues.licenses?.takeIf { it.isNotEmpty() }
@@ -420,7 +429,7 @@ class ArtifactService(
                             publishMetadataUpdateEvent(
                                 ArtifactMetadataUpdatedEvent(
                                     artifactId = savedArtifact.id,
-                                    updatedAt = now, // Event timestamp
+                                    updatedAt = now,
                                     updatedBy = updatedBy,
                                     updatedMetadata = changesForEvent
                                 )
@@ -442,7 +451,7 @@ class ArtifactService(
      * @param artifactType The type of the artifact, used to select the correct handler.
      * @return A [Result] containing the generated descriptor string, or an error.
      */
-    suspend fun generateArtifactDescriptor(artifactId: ArtifactId, artifactType: ArtifactType): Result<String> {
+    override suspend fun generateArtifactDescriptor(artifactId: ArtifactId, artifactType: ArtifactType): Result<String> {
         val artifactResult = artifactRepository.findById(artifactId)
         val artifact = artifactResult.getOrElse {
             return Result.failure(

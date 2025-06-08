@@ -1,6 +1,5 @@
 package dev.rubentxu.hodei.packages.domain.registrymanagement.service
 
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactType
 import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import dev.rubentxu.hodei.packages.domain.registrymanagement.command.*
 import dev.rubentxu.hodei.packages.domain.registrymanagement.events.ArtifactRegistryEvent
@@ -19,17 +18,15 @@ inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> {
 
 /**
  * Domain service that encapsulates business logic related to artifact registry management.
- * This service uses the RegistryRepository port for persistence and emits domain events.
+ * Implements ArtifactRegistryService.
  */
 class RegistryService(
     private val registryRepository: RegistryRepository,
     private val eventPublisher: (ArtifactRegistryEvent) -> Unit
-) {
-
+) : ArtifactRegistryService {
     // --- Create Operations ---
-
-    suspend fun handle(command: CreateHostedRegistryCommand): Result<HostedRegistry> {
-        return createRegistryInternal(
+    override suspend fun createHostedRegistry(command: CreateHostedRegistryCommand): Result<HostedRegistry> =
+        createRegistryInternal(
             name = command.name,
             registryFactory = { id ->
                 HostedRegistry(
@@ -47,10 +44,9 @@ class RegistryService(
             requestedBy = command.requestedBy,
             errorContext = "hosted"
         )
-    }
 
-    suspend fun handle(command: CreateProxyRegistryCommand): Result<ProxyRegistry> {
-        return createRegistryInternal(
+    override suspend fun createProxyRegistry(command: CreateProxyRegistryCommand): Result<ProxyRegistry> =
+        createRegistryInternal(
             name = command.name,
             registryFactory = { id ->
                 ProxyRegistry(
@@ -67,10 +63,9 @@ class RegistryService(
             requestedBy = command.requestedBy,
             errorContext = "proxy"
         )
-    }
 
-    suspend fun handle(command: CreateGroupRegistryCommand): Result<GroupRegistry> {
-        return createRegistryInternal(
+    override suspend fun createGroupRegistry(command: CreateGroupRegistryCommand): Result<GroupRegistry> =
+        createRegistryInternal(
             name = command.name,
             registryFactory = { id ->
                 GroupRegistry(
@@ -87,7 +82,98 @@ class RegistryService(
             requestedBy = command.requestedBy,
             errorContext = "group"
         )
+
+    override suspend fun updateRegistry(command: UpdateRegistryCommand): Result<Registry> {
+        try {
+            return registryRepository.findById(command.registryId).flatMap { existingRegistry ->
+                if (existingRegistry == null) {
+                    Result.failure(IllegalArgumentException("ArtifactRegistry with ID '${command.registryId}' not found"))
+                } else {
+                    val changes = mutableMapOf<String, Any?>()
+                    val updatedRegistry = buildUpdatedRegistry(existingRegistry, command, changes)
+
+                    if (updatedRegistry == existingRegistry && changes.isEmpty()) {
+                        Result.success(existingRegistry)
+                    } else {
+                        registryRepository.save(updatedRegistry).fold(
+                            onSuccess = { savedRegistry ->
+                                publishEvent(
+                                    ArtifactRegistryEvent.ArtifactRegistryUpdated(
+                                        registryId = savedRegistry.id.value,
+                                        name = savedRegistry.name,
+                                        updatedBy = command.requestedBy,
+                                        timestamp = Instant.now(),
+                                        changes = changes
+                                    )
+                                )
+                                Result.success(savedRegistry)
+                            },
+                            onFailure = { exception -> Result.failure(exception) }
+                        )
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return Result.failure(RuntimeException("Error updating registry '${command.registryId}': ${e.message}", e))
+        }
     }
+
+    override suspend fun deleteRegistry(command: DeleteRegistryCommand): Result<Boolean> {
+        try {
+            return registryRepository.findById(command.registryId).flatMap { registry ->
+                if (registry == null) {
+                    Result.success(false) // Not found, deletion is idempotent
+                } else {
+                    registryRepository.deleteById(command.registryId).flatMap { deleted ->
+                        if (deleted) {
+                            publishEvent(
+                                ArtifactRegistryEvent.ArtifactRegistryDeleted(
+                                    registryId = registry.id.value,
+                                    name = registry.name,
+                                    deletedBy = command.requestedBy,
+                                    timestamp = Instant.now()
+                                )
+                            )
+                        }
+                        Result.success(deleted)
+                    }
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return Result.failure(RuntimeException("Error deleting registry '${command.registryId}': ${e.message}", e))
+        }
+    }
+
+    override suspend fun findRegistryById(command: FindRegistryByIdCommand): Result<Registry?> =
+        try {
+            registryRepository.findById(command.registryId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(RuntimeException("Error finding registry by ID '${command.registryId}': ${e.message}", e))
+        }
+
+    override suspend fun findRegistryByName(command: FindRegistryByNameCommand): Result<Registry?> =
+        try {
+            registryRepository.findByName(command.name)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(RuntimeException("Error finding registry by name '${command.name}': ${e.message}", e))
+        }
+
+    override suspend fun findRegistriesByFormat(command: FindRegistriesByFormatCommand): Result<List<Registry>> =
+        try {
+            registryRepository.findAll(command.format)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(RuntimeException("Error finding registries by format '${command.format}': ${e.message}", e))
+        }
 
     private suspend inline fun <reified R : Registry> createRegistryInternal(
         name: String,
@@ -133,44 +219,6 @@ class RegistryService(
         }
     }
 
-    // --- Update Operation ---
-
-    suspend fun handle(command: UpdateRegistryCommand): Result<Registry> {
-        try {
-            return registryRepository.findById(command.registryId).flatMap { existingRegistry ->
-                if (existingRegistry == null) {
-                    Result.failure(IllegalArgumentException("ArtifactRegistry with ID '${command.registryId}' not found"))
-                } else {
-                    val changes = mutableMapOf<String, Any?>()
-                    val updatedRegistry = buildUpdatedRegistry(existingRegistry, command, changes)
-
-                    if (updatedRegistry == existingRegistry && changes.isEmpty()) {
-                        Result.success(existingRegistry) // No effective change
-                    } else {
-                        registryRepository.save(updatedRegistry).flatMap { savedRegistry ->
-                            if (changes.isNotEmpty()) {
-                                publishEvent(
-                                    ArtifactRegistryEvent.ArtifactRegistryUpdated(
-                                        registryId = savedRegistry.id.value,
-                                        name = savedRegistry.name,
-                                        updatedBy = command.requestedBy,
-                                        timestamp = Instant.now(), // Consider using an update timestamp from the saved entity
-                                        changes = changes
-                                    )
-                                )
-                            }
-                            Result.success(savedRegistry)
-                        }
-                    }
-                }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            return Result.failure(RuntimeException("Error updating registry '${command.registryId}': ${e.message}", e))
-        }
-    }
-
     private fun buildUpdatedRegistry(
         existing: Registry,
         command: UpdateRegistryCommand,
@@ -206,69 +254,6 @@ class RegistryService(
         return newValue?.takeIf { it != existingValue }?.also {
             changes[fieldName] = it
         } ?: existingValue
-    }
-
-    // --- Delete Operation ---
-
-    suspend fun handle(command: DeleteRegistryCommand): Result<Boolean> {
-        try {
-            return registryRepository.findById(command.registryId).flatMap { registry ->
-                if (registry == null) {
-                    Result.success(false) // Not found, deletion is idempotent
-                } else {
-                    registryRepository.deleteById(command.registryId).flatMap { deleted ->
-                        if (deleted) {
-                            publishEvent(
-                                ArtifactRegistryEvent.ArtifactRegistryDeleted(
-                                    registryId = registry.id.value,
-                                    name = registry.name,
-                                    deletedBy = command.requestedBy,
-                                    timestamp = Instant.now()
-                                )
-                            )
-                        }
-                        Result.success(deleted)
-                    }
-                }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            return Result.failure(RuntimeException("Error deleting registry '${command.registryId}': ${e.message}", e))
-        }
-    }
-
-    // --- Find Operations ---
-
-    suspend fun handle(command: FindRegistriesByFormatCommand): Result<List<Registry>> {
-        // Wrap repository call in a try-catch to convert unexpected exceptions to Result.failure
-        return try {
-            registryRepository.findAll(command.format)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.failure(RuntimeException("Error finding registries by format '${command.format}': ${e.message}", e))
-        }
-    }
-
-    suspend fun handle(command: FindRegistryByIdCommand): Result<Registry?> {
-        return try {
-            registryRepository.findById(command.registryId)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.failure(RuntimeException("Error finding registry by ID '${command.registryId}': ${e.message}", e))
-        }
-    }
-
-    suspend fun handle(command: FindRegistryByNameCommand): Result<Registry?> {
-        return try {
-            registryRepository.findByName(command.name)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Result.failure(RuntimeException("Error finding registry by name '${command.name}': ${e.message}", e))
-        }
     }
 
     /**

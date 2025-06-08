@@ -1,6 +1,5 @@
 package dev.rubentxu.hodei.packages.domain.artifactmanagement.command
 
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactMetadata
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactType
 import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
@@ -18,20 +17,19 @@ import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
  *                    This is often used by [FormatHandler] implementations to infer initial coordinates or type.
  * @property artifactType The [ArtifactType] of the artifact, indicating its format (e.g., MAVEN, NPM, DOCKER).
  *                        This helps in selecting the appropriate [FormatHandler].
- * @property createdBy The [UserId] of the user or system principal initiating the upload.
+ * @property uploaderUserId The [UserId] of the user or system principal initiating the upload.
  *                     This is used for auditing and setting the `createdBy` field in [ArtifactMetadata].
- * @property providedMetadata An [ArtifactMetadata] object containing descriptive information about the artifact
- *                            as provided by the uploader. The service will use this as a base and will
- *                            override or set system-managed fields like `id`, `createdBy`, `createdAt`,
- *                            `updatedAt`, and `sizeInBytes` (from the actual content).
+ * @property providedUserMetadata A map of key-value pairs representing user-provided metadata.
+ *                                This is used by [FormatHandler] implementations as a fallback or override
+ *                                for metadata extraction.
  */
 data class UploadArtifactCommand(
     val registryId: RegistryId,
     val content: ByteArray,
     val filename: String,
     val artifactType: ArtifactType,
-    val createdBy: UserId,
-    val providedMetadata: ArtifactMetadata // El llamador provee este objeto estructurado
+    val uploaderUserId: UserId, // Renamed from createdBy
+    val providedUserMetadata: Map<String, String>? // Renamed from providedMetadata and type changed
 ) {
     // Es buena práctica sobreescribir equals y hashCode para data classes con ByteArrays
     // para asegurar una comparación basada en el contenido del array y no en su referencia.
@@ -45,8 +43,8 @@ data class UploadArtifactCommand(
         if (!content.contentEquals(other.content)) return false
         if (filename != other.filename) return false
         if (artifactType != other.artifactType) return false
-        if (createdBy != other.createdBy) return false
-        if (providedMetadata != other.providedMetadata) return false
+        if (uploaderUserId != other.uploaderUserId) return false // Updated
+        if (providedUserMetadata != other.providedUserMetadata) return false // Updated
 
         return true
     }
@@ -56,8 +54,8 @@ data class UploadArtifactCommand(
         result = 31 * result + content.contentHashCode()
         result = 31 * result + filename.hashCode()
         result = 31 * result + artifactType.hashCode()
-        result = 31 * result + createdBy.hashCode()
-        result = 31 * result + providedMetadata.hashCode()
+        result = 31 * result + uploaderUserId.hashCode() // Updated
+        result = 31 * result + (providedUserMetadata?.hashCode() ?: 0) // Updated for nullable
         return result
     }
 }
