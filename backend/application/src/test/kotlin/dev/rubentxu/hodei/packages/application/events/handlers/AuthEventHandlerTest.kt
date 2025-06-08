@@ -2,7 +2,7 @@ package dev.rubentxu.hodei.packages.application.events.handlers
 
 import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthEventHandler
 import dev.rubentxu.hodei.packages.domain.identityaccess.events.AuthEvent
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.User
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -21,7 +21,7 @@ class AuthEventHandlerTest {
     @Test
     fun `test handle AdminRegistered event`() =
         runTest {
-            coEvery { userRepository.save(any<AdminUser>()) } returns mockk()
+            coEvery { userRepository.save(any<User>()) } returns mockk()
 
             val event: AuthEvent =
                 AuthEvent.AdminRegistered(
@@ -33,6 +33,6 @@ class AuthEventHandlerTest {
 
             handler.handle(event)
 
-            coVerify { userRepository.save(any<AdminUser>()) }
+            coVerify { userRepository.save(any<User>()) }
         }
 }

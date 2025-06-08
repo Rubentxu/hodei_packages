@@ -1,13 +1,21 @@
 package dev.rubentxu.hodei.packages.domain.registrymanagement.service
 
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.UserId
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactType
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+import dev.rubentxu.hodei.packages.domain.registrymanagement.command.*
 import dev.rubentxu.hodei.packages.domain.registrymanagement.events.ArtifactRegistryEvent
-import dev.rubentxu.hodei.packages.domain.registrymanagement.model.Registry
-import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryType
-import dev.rubentxu.hodei.packages.domain.registrymanagement.model.StorageType
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.*
 import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.RegistryRepository
 import java.time.Instant
-import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
+
+// Helper extension functions for Result for cleaner composition
+inline fun <T, R> Result<T>.flatMap(transform: (T) -> Result<R>): Result<R> {
+    return fold(
+        onSuccess = { transform(it) },
+        onFailure = { Result.failure(it) }
+    )
+}
 
 /**
  * Domain service that encapsulates business logic related to artifact registry management.
@@ -17,220 +25,264 @@ class RegistryService(
     private val registryRepository: RegistryRepository,
     private val eventPublisher: (ArtifactRegistryEvent) -> Unit
 ) {
-    /**
-     * Creates a new artifact registry in the system.
-     * @param name Name of the artifact registry.
-     * @param type Type of the artifact registry (MAVEN, NPM).
-     * @param description Description of the artifact registry.
-     * @param isPublic Whether the artifact registry is public or private.
-     * @param createdBy ID of the user creating the artifact registry.
-     * @return Result with the created artifact registry or an error.
-     */
-    suspend fun createArtifactRegistry(
-        name: String,
-        type: RegistryType,
-        description: String,
-        isPublic: Boolean,
-        createdBy: UserId
-    ): Result<Registry> {
-        return try {
-            if (registryRepository.existsByName(name)) {
-                Result.failure(IllegalStateException("An artifact registry with name '$name' already exists"))
-            } else {
-                val now = Instant.now()
-                val registry = Registry(
-                    id = UUID.randomUUID(),
-                    name = name,
-                    type = type,
-                    description = description,
-                    createdBy = createdBy,
-                    createdAt = now,
-                    updatedAt = now,
-                    isPublic = isPublic,
-                    storageType = StorageType.LOCAL // Default or determined by other logic
-                )
 
-                registryRepository.save(registry).fold(
-                    onSuccess = { savedArtifactRegistry ->
-                        eventPublisher(
+    // --- Create Operations ---
+
+    suspend fun handle(command: CreateHostedRegistryCommand): Result<HostedRegistry> {
+        return createRegistryInternal(
+            name = command.name,
+            registryFactory = { id ->
+                HostedRegistry(
+                    id = id,
+                    name = command.name,
+                    format = command.format,
+                    description = command.description,
+                    storageConfig = command.storageConfig,
+                    deploymentPolicy = command.deploymentPolicy,
+                    cleanupPolicy = command.cleanupPolicy,
+                    specificFormatConfig = command.specificFormatConfig,
+                    online = command.online
+                )
+            },
+            requestedBy = command.requestedBy,
+            errorContext = "hosted"
+        )
+    }
+
+    suspend fun handle(command: CreateProxyRegistryCommand): Result<ProxyRegistry> {
+        return createRegistryInternal(
+            name = command.name,
+            registryFactory = { id ->
+                ProxyRegistry(
+                    id = id,
+                    name = command.name,
+                    format = command.format,
+                    description = command.description,
+                    storageConfig = command.storageConfig,
+                    proxyConfig = command.proxyConfig,
+                    cleanupPolicy = command.cleanupPolicy,
+                    online = command.online
+                )
+            },
+            requestedBy = command.requestedBy,
+            errorContext = "proxy"
+        )
+    }
+
+    suspend fun handle(command: CreateGroupRegistryCommand): Result<GroupRegistry> {
+        return createRegistryInternal(
+            name = command.name,
+            registryFactory = { id ->
+                GroupRegistry(
+                    id = id,
+                    name = command.name,
+                    format = command.format,
+                    description = command.description,
+                    storageConfig = command.storageConfig,
+                    groupConfig = command.groupConfig,
+                    cleanupPolicy = command.cleanupPolicy,
+                    online = command.online
+                )
+            },
+            requestedBy = command.requestedBy,
+            errorContext = "group"
+        )
+    }
+
+    private suspend inline fun <reified R : Registry> createRegistryInternal(
+        name: String,
+        crossinline registryFactory: (RegistryId) -> R, // Use crossinline for non-local return from lambda
+        requestedBy: UserId,
+        errorContext: String
+    ): Result<R> {
+        try {
+            return registryRepository.existsByName(name).flatMap { exists ->
+                if (exists) {
+                    Result.failure(IllegalStateException("An artifact registry with name '$name' already exists"))
+                } else {
+                    val newRegistryId = RegistryId.random()
+                    val newRegistry = registryFactory(newRegistryId)
+
+                    registryRepository.save(newRegistry).flatMap { savedRegistry ->
+                        val typedSavedRegistry = savedRegistry as? R
+                            ?: return@flatMap Result.failure(
+                                IllegalStateException(
+                                    "Saved $errorContext registry was not of the expected type ${R::class.simpleName}. " +
+                                            "Actual type: ${savedRegistry::class.simpleName}"
+                                )
+                            )
+
+                        publishEvent(
                             ArtifactRegistryEvent.ArtifactRegistryCreated(
-                                registryId = savedArtifactRegistry.id,
-                                name = savedArtifactRegistry.name,
-                                type = savedArtifactRegistry.type,
-                                createdBy = savedArtifactRegistry.createdBy,
-                                timestamp = savedArtifactRegistry.createdAt
+                                registryId = typedSavedRegistry.id.value,
+                                name = typedSavedRegistry.name,
+                                type = typedSavedRegistry.format,
+                                createdBy = requestedBy,
+                                timestamp = Instant.now() // Consider using a creation timestamp from the saved entity if available
                             )
                         )
-                        Result.success(savedArtifactRegistry)
-                    },
-                    onFailure = { exception ->
-                        Result.failure(exception)
+                        Result.success(typedSavedRegistry)
                     }
-                )
+                }
             }
+        } catch (e: CancellationException) {
+            throw e // Re-throw cancellation exceptions to allow coroutine machinery to handle them
         } catch (e: Exception) {
-            Result.failure(RuntimeException("Error creating artifact registry: ${e.message}", e))
+            // Catch-all for unexpected errors during the process, including those from existsByName or save if they don't return Result
+            return Result.failure(RuntimeException("Error creating $errorContext artifact registry '$name': ${e.message}", e))
         }
     }
 
-    /**
-     * Updates an existing artifact registry.
-     * @param id UUID of the registry to update.
-     * @param description Optional new description.
-     * @param isPublic Optional new visibility status.
-     * @param updatedBy ID of the user performing the update.
-     * @return Result with the updated artifact registry or an error.
-     */
-    suspend fun updateArtifactRegistry(
-        id: UUID,
-        description: String? = null,
-        isPublic: Boolean? = null,
-        updatedBy: UserId
-    ): Result<Registry> {
-        return registryRepository.findById(id).fold(
-            onSuccess = { artifactRegistry ->
-                if (artifactRegistry == null) {
-                    Result.failure(IllegalArgumentException("ArtifactRegistry with ID '$id' not found"))
+    // --- Update Operation ---
+
+    suspend fun handle(command: UpdateRegistryCommand): Result<Registry> {
+        try {
+            return registryRepository.findById(command.registryId).flatMap { existingRegistry ->
+                if (existingRegistry == null) {
+                    Result.failure(IllegalArgumentException("ArtifactRegistry with ID '${command.registryId}' not found"))
                 } else {
                     val changes = mutableMapOf<String, Any?>()
-                    val updatedRegistry = artifactRegistry.copy(
-                        description = description?.also { changes["description"] = it } ?: artifactRegistry.description,
-                        isPublic = isPublic?.also { changes["isPublic"] = it } ?: artifactRegistry.isPublic,
-                        updatedAt = Instant.now()
-                    )
+                    val updatedRegistry = buildUpdatedRegistry(existingRegistry, command, changes)
 
-                    if (changes.isEmpty() && description == null && isPublic == null) {
-                        // No actual changes were requested beyond what's already there
-                        // or only timestamp would change, which might not be a "user update"
-                        return@fold Result.success(artifactRegistry)
-                    }
-                    
-                    if (updatedRegistry == artifactRegistry.copy(updatedAt = updatedRegistry.updatedAt) && changes.isEmpty()){
-                         // Only timestamp changed, no actual data modification by user
-                        return@fold Result.success(artifactRegistry)
-                    }
-
-
-                    registryRepository.save(updatedRegistry).fold(
-                        onSuccess = { savedArtifactRegistry ->
-                            eventPublisher(
-                                ArtifactRegistryEvent.ArtifactRegistryUpdated(
-                                    registryId = savedArtifactRegistry.id,
-                                    name = savedArtifactRegistry.name,
-                                    updatedBy = updatedBy, // Using UserId
-                                    timestamp = savedArtifactRegistry.updatedAt,
-                                    changes = changes
+                    if (updatedRegistry == existingRegistry && changes.isEmpty()) {
+                        Result.success(existingRegistry) // No effective change
+                    } else {
+                        registryRepository.save(updatedRegistry).flatMap { savedRegistry ->
+                            if (changes.isNotEmpty()) {
+                                publishEvent(
+                                    ArtifactRegistryEvent.ArtifactRegistryUpdated(
+                                        registryId = savedRegistry.id.value,
+                                        name = savedRegistry.name,
+                                        updatedBy = command.requestedBy,
+                                        timestamp = Instant.now(), // Consider using an update timestamp from the saved entity
+                                        changes = changes
+                                    )
                                 )
-                            )
-                            Result.success(savedArtifactRegistry)
-                        },
-                        onFailure = { exception -> Result.failure(exception) }
-                    )
+                            }
+                            Result.success(savedRegistry)
+                        }
+                    }
                 }
-            },
-            onFailure = { exception -> Result.failure(exception) }
-        )
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return Result.failure(RuntimeException("Error updating registry '${command.registryId}': ${e.message}", e))
+        }
     }
 
-    /**
-     * Deletes an artifact registry.
-     * @param id UUID of the registry to delete.
-     * @param deletedBy ID of the user performing the deletion.
-     * @return Result with true if deleted, false if not found, or an error.
-     */
-    suspend fun deleteArtifactRegistry(id: UUID, deletedBy: UserId): Boolean {
-        return try {
-            val findResult = registryRepository.findById(id)
-            if (findResult.isFailure) {
-                return false
-            }
-            val artifactRegistry = findResult.getOrNull()
+    private fun buildUpdatedRegistry(
+        existing: Registry,
+        command: UpdateRegistryCommand,
+        changes: MutableMap<String, Any?>
+    ): Registry {
+        return when (existing) {
+            is HostedRegistry -> existing.copy(
+                description = updateAndTrackChange(command.description, existing.description, "description", changes),
+                online = updateAndTrackChange(command.online, existing.online, "online", changes),
+                storageConfig = updateAndTrackChange(command.storageConfig, existing.storageConfig, "storageConfig", changes),
+                cleanupPolicy = updateAndTrackChange(command.cleanupPolicy, existing.cleanupPolicy, "cleanupPolicy", changes),
+                deploymentPolicy = updateAndTrackChange(command.deploymentPolicy, existing.deploymentPolicy, "deploymentPolicy", changes),
+                specificFormatConfig = updateAndTrackChange(command.specificFormatConfig, existing.specificFormatConfig, "specificFormatConfig", changes)
+            )
+            is ProxyRegistry -> existing.copy(
+                description = updateAndTrackChange(command.description, existing.description, "description", changes),
+                online = updateAndTrackChange(command.online, existing.online, "online", changes),
+                storageConfig = updateAndTrackChange(command.storageConfig, existing.storageConfig, "storageConfig", changes),
+                cleanupPolicy = updateAndTrackChange(command.cleanupPolicy, existing.cleanupPolicy, "cleanupPolicy", changes),
+                proxyConfig = updateAndTrackChange(command.proxyConfig, existing.proxyConfig, "proxyConfig", changes)
+            )
+            is GroupRegistry -> existing.copy(
+                description = updateAndTrackChange(command.description, existing.description, "description", changes),
+                online = updateAndTrackChange(command.online, existing.online, "online", changes),
+                storageConfig = updateAndTrackChange(command.storageConfig, existing.storageConfig, "storageConfig", changes),
+                cleanupPolicy = updateAndTrackChange(command.cleanupPolicy, existing.cleanupPolicy, "cleanupPolicy", changes),
+                groupConfig = updateAndTrackChange(command.groupConfig, existing.groupConfig, "groupConfig", changes)
+            )
+        }
+    }
 
-            if (artifactRegistry == null) {
-                return false // Not found, deletion considered successful in terms of state
-            } else {
-                val deleted = registryRepository.deleteById(id) // Returns Boolean, can throw
-                if (deleted) {
-                    eventPublisher(
-                        ArtifactRegistryEvent.ArtifactRegistryDeleted(
-                            registryId = artifactRegistry.id,
-                            name = artifactRegistry.name,
-                            deletedBy = deletedBy, // Using UserId
-                            timestamp = Instant.now()
-                        )
-                    )
+    private fun <T> updateAndTrackChange(newValue: T?, existingValue: T, fieldName: String, changes: MutableMap<String, Any?>): T {
+        return newValue?.takeIf { it != existingValue }?.also {
+            changes[fieldName] = it
+        } ?: existingValue
+    }
+
+    // --- Delete Operation ---
+
+    suspend fun handle(command: DeleteRegistryCommand): Result<Boolean> {
+        try {
+            return registryRepository.findById(command.registryId).flatMap { registry ->
+                if (registry == null) {
+                    Result.success(false) // Not found, deletion is idempotent
+                } else {
+                    registryRepository.deleteById(command.registryId).flatMap { deleted ->
+                        if (deleted) {
+                            publishEvent(
+                                ArtifactRegistryEvent.ArtifactRegistryDeleted(
+                                    registryId = registry.id.value,
+                                    name = registry.name,
+                                    deletedBy = command.requestedBy,
+                                    timestamp = Instant.now()
+                                )
+                            )
+                        }
+                        Result.success(deleted)
+                    }
                 }
-                return deleted
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            return false
+            return Result.failure(RuntimeException("Error deleting registry '${command.registryId}': ${e.message}", e))
+        }
+    }
+
+    // --- Find Operations ---
+
+    suspend fun handle(command: FindRegistriesByFormatCommand): Result<List<Registry>> {
+        // Wrap repository call in a try-catch to convert unexpected exceptions to Result.failure
+        return try {
+            registryRepository.findAll(command.format)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(RuntimeException("Error finding registries by format '${command.format}': ${e.message}", e))
+        }
+    }
+
+    suspend fun handle(command: FindRegistryByIdCommand): Result<Registry?> {
+        return try {
+            registryRepository.findById(command.registryId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(RuntimeException("Error finding registry by ID '${command.registryId}': ${e.message}", e))
+        }
+    }
+
+    suspend fun handle(command: FindRegistryByNameCommand): Result<Registry?> {
+        return try {
+            registryRepository.findByName(command.name)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(RuntimeException("Error finding registry by name '${command.name}': ${e.message}", e))
         }
     }
 
     /**
-     * Changes the visibility of an artifact registry.
-     * @param id UUID of the registry.
-     * @param isPublic New visibility status.
-     * @param updatedBy ID of the user performing the change.
-     * @return Result with the updated artifact registry or an error.
+     * Helper method to publish events safely.
+     * Logs errors but does not let event publishing failures fail the main operation.
      */
-    suspend fun changeArtifactRegistryVisibility(id: UUID, isPublic: Boolean, updatedBy: UserId): Result<Registry> {
-        return registryRepository.findById(id).fold(
-            onSuccess = { artifactRegistry ->
-                if (artifactRegistry == null) {
-                    Result.failure(IllegalArgumentException("ArtifactRegistry with ID '$id' not found"))
-                } else if (artifactRegistry.isPublic == isPublic) {
-                    Result.success(artifactRegistry) // No change needed
-                } else {
-                    val updatedArtifactRegistry = artifactRegistry.copy(
-                        isPublic = isPublic,
-                        updatedAt = Instant.now()
-                    )
-                    registryRepository.save(updatedArtifactRegistry).fold(
-                        onSuccess = { savedArtifactRegistry ->
-                            eventPublisher(
-                                ArtifactRegistryEvent.ArtifactRegistryAccessChanged(
-                                    registryId = savedArtifactRegistry.id,
-                                    name = savedArtifactRegistry.name,
-                                    isPublic = savedArtifactRegistry.isPublic,
-                                    updatedBy = updatedBy, // Using UserId
-                                    timestamp = savedArtifactRegistry.updatedAt
-                                )
-                            )
-                            Result.success(savedArtifactRegistry)
-                        },
-                        onFailure = { exception -> Result.failure(exception) }
-                    )
-                }
-            },
-            onFailure = { exception -> Result.failure(exception) }
-        )
-    }
-
-    /**
-     * Finds all artifact registries, optionally filtered by type.
-     * @param type Optional registry type to filter by.
-     * @return Result with a list of artifact registries or an error.
-     */
-    suspend fun findArtifactRegistries(type: RegistryType? = null): Result<List<Registry>> {
-        return registryRepository.findAll(type) // Assumes findAll already returns Result<List<Registry>>
-    }
-
-    /**
-     * Finds an artifact registry by its ID.
-     * @param id UUID of the registry.
-     * @return Result with the artifact registry if found (or null), or an error.
-     */
-    suspend fun findArtifactRegistryById(id: UUID): Result<Registry?> {
-        return registryRepository.findById(id) // Assumes findById already returns Result<Registry?>
-    }
-
-    /**
-     * Finds an artifact registry by its name.
-     * @param name Name of the registry.
-     * @return Result with the artifact registry if found (or null), or an error.
-     */
-    suspend fun findArtifactRegistryByName(name: String): Result<Registry?> {
-        return registryRepository.findByName(name) // Assumes findByName already returns Result<Registry?>
+    private fun publishEvent(event: ArtifactRegistryEvent) {
+        try {
+            eventPublisher(event)
+        } catch (e: Exception) {
+            // Consider using a proper logger in a real application
+            System.err.println("Error publishing event $event: ${e.message}")
+            // Optionally, re-throw if event publishing is critical and should fail the operation
+            // throw RuntimeException("Failed to publish event $event", e)
+        }
     }
 }

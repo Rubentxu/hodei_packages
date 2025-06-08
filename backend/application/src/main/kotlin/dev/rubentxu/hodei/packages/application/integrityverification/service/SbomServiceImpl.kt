@@ -9,7 +9,7 @@ import dev.rubentxu.hodei.packages.application.integrityverification.dto.SbomDoc
 import dev.rubentxu.hodei.packages.application.integrityverification.dto.SbomError
 import dev.rubentxu.hodei.packages.application.integrityverification.dto.VulnerabilityDto
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.EventPublisher
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.ArtifactStoragePort
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.ArtifactStorage
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomAnalysisCompletedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomStoredEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.DomainAnalysisResult
@@ -34,7 +34,7 @@ class SbomServiceImpl(
     private val sbomRepository: SbomRepository,
     private val sbomGenerator: SbomGenerator,
     private val eventPublisher: EventPublisher,
-    private val artifactStorage: ArtifactStoragePort,
+    private val artifactStorage: ArtifactStorage,
     private val sbomAnalyzerPort: SbomAnalyzerPort,
 ) : SbomService {
 

@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.model
 
-import dev.rubentxu.hodei.packages.domain.model.permission.Role
+
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
@@ -10,7 +10,7 @@ import java.util.UUID
 class RoleTest : StringSpec({
     
     "should create a valid role" {
-        val id = UUID.randomUUID()
+        val id = RoleId(UUID.randomUUID())
         val createdBy = UUID.randomUUID()
         val now = Instant.now()
         
@@ -68,7 +68,7 @@ class RoleTest : StringSpec({
     "should throw exception when name is blank" {
         val exception = shouldThrow<IllegalArgumentException> {
             Role(
-                id = UUID.randomUUID(),
+                id =RoleId(UUID.randomUUID()),
                 name = "",
                 description = "Invalid role",
                 permissions = setOf(Permission.VIEW_REPOSITORY),
@@ -85,7 +85,7 @@ class RoleTest : StringSpec({
     "should throw exception when name has invalid format" {
         val exception = shouldThrow<IllegalArgumentException> {
             Role(
-                id = UUID.randomUUID(),
+                id = RoleId(UUID.randomUUID()),
                 name = "invalid name with spaces",
                 description = "Invalid role",
                 permissions = setOf(Permission.VIEW_REPOSITORY),
@@ -102,7 +102,7 @@ class RoleTest : StringSpec({
     "should throw exception when description is too long" {
         val exception = shouldThrow<IllegalArgumentException> {
             Role(
-                id = UUID.randomUUID(),
+                id = RoleId(UUID.randomUUID()),
                 name = "test-role",
                 description = "a".repeat(256),
                 permissions = setOf(Permission.VIEW_REPOSITORY),
@@ -119,7 +119,7 @@ class RoleTest : StringSpec({
     "should throw exception when permissions are empty" {
         val exception = shouldThrow<IllegalArgumentException> {
             Role(
-                id = UUID.randomUUID(),
+                id = RoleId(UUID.randomUUID()),
                 name = "test-role",
                 description = "Invalid role",
                 permissions = emptySet(),

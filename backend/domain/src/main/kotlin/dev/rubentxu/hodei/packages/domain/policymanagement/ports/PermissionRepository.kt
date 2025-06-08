@@ -1,7 +1,10 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.ports
 
-import dev.rubentxu.hodei.packages.domain.model.permission.Role
-import dev.rubentxu.hodei.packages.domain.model.permission.UserPermission
+
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.Role
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.RoleId
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
 import java.util.UUID
 
 /**
@@ -21,7 +24,7 @@ interface PermissionRepository {
      * @param id Role ID
      * @return Result with the role if it exists, or error if not found
      */
-    suspend fun findRoleById(id: UUID): Result<Role>
+    suspend fun findRoleById(id: RoleId): Result<Role>
 
     /**
      * Finds a role by its name.
@@ -42,7 +45,7 @@ interface PermissionRepository {
      * @param id ID of the role to delete
      * @return Result with true if successfully deleted, false if it didn't exist or is a system role, or error
      */
-    suspend fun deleteRoleById(id: UUID): Result<Boolean>
+    suspend fun deleteRoleById(id: RoleId): Result<Boolean>
 
     /**
      * Saves a user permission.
@@ -57,29 +60,29 @@ interface PermissionRepository {
      * @param activeOnly If true, returns only active (non-expired) permissions
      * @return Result with the list of user permissions or error
      */
-    suspend fun findPermissionsByUserId(userId: UUID, activeOnly: Boolean = true): Result<List<UserPermission>>
+    suspend fun findPermissionsByUserId(userId: UserId, activeOnly: Boolean = true): Result<List<UserPermission>>
 
     /**
      * Finds permissions by repository.
-     * @param repositoryId Repository ID
+     * @param registryId Repository ID
      * @param activeOnly If true, returns only active (non-expired) permissions
      * @return Result with the list of permissions for the repository or error
      */
     suspend fun findPermissionsByRepositoryId(
-        repositoryId: UUID,
+        registryId: RegistryId,
         activeOnly: Boolean = true
     ): Result<List<UserPermission>>
 
     /**
      * Finds specific permissions for a user in a repository.
      * @param userId User ID
-     * @param repositoryId Repository ID
+     * @param registryId Repository ID
      * @param activeOnly If true, returns only active (non-expired) permissions
      * @return Result with the list of user permissions for the repository or error
      */
     suspend fun findUserPermissionsForRepository(
-        userId: UUID,
-        repositoryId: UUID,
+        userId: UserId,
+        registryId: RegistryId,
         activeOnly: Boolean = true
     ): Result<List<UserPermission>>
 
@@ -96,5 +99,5 @@ interface PermissionRepository {
      * @param repositoryId Repository ID
      * @return Result with the number of permissions revoked or error
      */
-    suspend fun revokeAllUserPermissionsForRepository(userId: UUID, repositoryId: UUID): Result<Int>
+    suspend fun revokeAllUserPermissionsForRepository(userId: UserId, repositoryId: RegistryId): Result<Int>
 }

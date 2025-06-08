@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.merkle.service
 
-import dev.rubentxu.hodei.packages.domain.common.events.EventPublisher
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.EventPublisher
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events.MerkleGraphVerifiedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events.MerkleVerificationFailedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.events.TamperingDetectedEvent
@@ -9,9 +9,10 @@ import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.Mer
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.MerkleNode
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.MerkleNodeType
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.model.Signature
+import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports.ContentAddressableStorage
+import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports.CryptographicService
 import dev.rubentxu.hodei.packages.domain.integrityverification.merkle.ports.MerkleGraphRepository
-import dev.rubentxu.hodei.packages.domain.ports.merkle.ContentAddressableStorage
-import dev.rubentxu.hodei.packages.domain.ports.merkle.CryptographicService
+import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model.MerkleVerificationService
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery

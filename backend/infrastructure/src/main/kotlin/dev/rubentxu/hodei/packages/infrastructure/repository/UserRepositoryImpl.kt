@@ -1,15 +1,14 @@
 package dev.rubentxu.hodei.packages.infrastructure.repository
 
 import com.zaxxer.hikari.HikariDataSource
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.User
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
 import java.sql.ResultSet
 import java.sql.Timestamp
-import java.time.Instant
 import java.util.UUID
 
 class UserRepositoryImpl(private val dataSource: HikariDataSource) : UserRepository {
-    override fun save(user: AdminUser): AdminUser {
+    override fun save(user: User): User {
         dataSource.connection.use { conn ->
             conn.autoCommit = false // Start transaction
             try {
@@ -45,7 +44,7 @@ class UserRepositoryImpl(private val dataSource: HikariDataSource) : UserReposit
         }
     }
 
-    override fun findById(id: UUID): AdminUser? {
+    override fun findById(id: UUID): User? {
         dataSource.connection.use { conn ->
             val sql = "SELECT * FROM users WHERE id = ?"
             conn.prepareStatement(sql).use { stmt ->
@@ -57,7 +56,7 @@ class UserRepositoryImpl(private val dataSource: HikariDataSource) : UserReposit
         }
     }
 
-    override fun findByUsername(username: String): AdminUser? {
+    override fun findByUsername(username: String): User? {
         dataSource.connection.use { conn ->
             val sql = "SELECT * FROM users WHERE username = ?"
             conn.prepareStatement(sql).use { stmt ->
@@ -69,7 +68,7 @@ class UserRepositoryImpl(private val dataSource: HikariDataSource) : UserReposit
         }
     }
 
-    override fun findByEmail(email: String): AdminUser? {
+    override fun findByEmail(email: String): User? {
         dataSource.connection.use { conn ->
             val sql = "SELECT * FROM users WHERE email = ?"
             conn.prepareStatement(sql).use { stmt ->
@@ -81,12 +80,12 @@ class UserRepositoryImpl(private val dataSource: HikariDataSource) : UserReposit
         }
     }
 
-    override fun findAll(): List<AdminUser> {
+    override fun findAll(): List<User> {
         dataSource.connection.use { conn ->
             val sql = "SELECT * FROM users"
             conn.prepareStatement(sql).use { stmt ->
                 stmt.executeQuery().use { rs ->
-                    val users = mutableListOf<AdminUser>()
+                    val users = mutableListOf<User>()
                     while (rs.next()) {
                         users.add(rs.toAdminUser())
                     }
@@ -106,7 +105,7 @@ class UserRepositoryImpl(private val dataSource: HikariDataSource) : UserReposit
         }
     }
 
-    private fun ResultSet.toAdminUser(): AdminUser = AdminUser(
+    private fun ResultSet.toAdminUser(): User = User(
         id = this.getObject("id", UUID::class.java),
         username = this.getString("username"),
         email = this.getString("email"),

@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.model
 
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.UserId
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import java.time.Instant
 
 @JvmInline

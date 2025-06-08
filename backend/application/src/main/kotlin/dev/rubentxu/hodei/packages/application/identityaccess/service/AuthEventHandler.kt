@@ -1,7 +1,7 @@
 package dev.rubentxu.hodei.packages.application.identityaccess.service
 
 import dev.rubentxu.hodei.packages.domain.identityaccess.events.AuthEvent
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.User
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -14,7 +14,7 @@ class AuthEventHandler(private val userRepository: UserRepository) {
         when (event) {
             is AuthEvent.AdminRegistered -> {
                 val admin =
-                    AdminUser(
+                    User(
                         id = event.adminId,
                         username = event.username,
                         email = event.email,

@@ -1,6 +1,5 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model
 
-import dev.rubentxu.hodei.packages.domain.model.sbom.SbomRelationship
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContain

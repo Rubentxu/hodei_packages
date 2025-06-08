@@ -7,7 +7,7 @@ import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServic
 import dev.rubentxu.hodei.packages.application.identityaccess.service.AuthServiceImpl
 import dev.rubentxu.hodei.packages.domain.ports.security.PasswordHasher
 import dev.rubentxu.hodei.packages.domain.ports.security.TokenService
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.User
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -38,7 +38,7 @@ class AuthServiceImplTest {
 
             val mockSavedUserId = UUID.randomUUID()
             val mockSavedUser =
-                AdminUser(
+                User(
                     id = mockSavedUserId,
                     username = command.username,
                     email = command.email,
@@ -85,7 +85,7 @@ class AuthServiceImplTest {
     @Test
     fun `registerFirstAdmin should return failure when admin already exists`() = runTest {
         val command = RegisterAdminCommand("adminUser", "admin@example.com", "Password123")
-        val existingAdmin = AdminUser(
+        val existingAdmin = User(
             id = UUID.randomUUID(),
             username = "existingAdmin",
             email = "existing@example.com",
@@ -116,7 +116,7 @@ class AuthServiceImplTest {
         val command = LoginCommand("test@example.com", "password123")
         val email = command.usernameOrEmail
         val hashedPassword = "hashedPassword"
-        val mockAdminUser = AdminUser(
+        val mockUser = User(
             id = UUID.randomUUID(),
             username = "testuser",
             email = command.usernameOrEmail,
@@ -128,21 +128,21 @@ class AuthServiceImplTest {
         )
         val expectedToken = "generated-jwt-token"
 
-        every { userRepository.findByEmail(email) } returns mockAdminUser
+        every { userRepository.findByEmail(email) } returns mockUser
         every { passwordHasher.verify(command.password, hashedPassword) } returns true
-        every { tokenService.generateToken(mockAdminUser.id.toString(), mockAdminUser.username, mockAdminUser.email) } returns expectedToken
+        every { tokenService.generateToken(mockUser.id.toString(), mockUser.username, mockUser.email) } returns expectedToken
 
         val result = authService.login(command)
 
         assertTrue(result.isSuccess)
         val authResult = result.getOrNull()!!
-        assertEquals(mockAdminUser.username, authResult.username)
-        assertEquals(mockAdminUser.email, authResult.email)
+        assertEquals(mockUser.username, authResult.username)
+        assertEquals(mockUser.email, authResult.email)
         assertEquals(expectedToken, authResult.token)
 
         verify(exactly = 1) { userRepository.findByEmail(email) }
         verify(exactly = 1) { passwordHasher.verify(command.password, hashedPassword) }
-        verify(exactly = 1) { tokenService.generateToken(mockAdminUser.id.toString(), mockAdminUser.username, mockAdminUser.email) }
+        verify(exactly = 1) { tokenService.generateToken(mockUser.id.toString(), mockUser.username, mockUser.email) }
     }
 
     @Test
@@ -167,7 +167,7 @@ class AuthServiceImplTest {
     fun `login failure when password is incorrect`() = runTest {
         val command = LoginCommand("test@example.com", "wrongpassword")
         val hashedPassword = "hashedPassword"
-        val mockAdminUser = AdminUser(
+        val mockUser = User(
             id = UUID.randomUUID(),
             username = "testuser",
             email = command.usernameOrEmail,
@@ -178,7 +178,7 @@ class AuthServiceImplTest {
             lastAccess = null,
         )
 
-        every { userRepository.findByEmail(command.usernameOrEmail) } returns mockAdminUser
+        every { userRepository.findByEmail(command.usernameOrEmail) } returns mockUser
         every { passwordHasher.verify(command.password, hashedPassword) } returns false
 
         val result = authService.login(command)

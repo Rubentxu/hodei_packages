@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.kotlin.stdlib.jdk8)
     // This module should remain free of framework dependencies.
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.coroutines.core)
 
     // Testing
     testImplementation(libs.kotlin.test)

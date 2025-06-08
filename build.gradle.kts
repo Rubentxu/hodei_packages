@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.ktlint) apply false
@@ -8,13 +10,23 @@ allprojects {
     repositories {
         mavenCentral()
     }
-//    tasks.register("prepareKotlinBuildScriptModel") { }
+
+    // Configuración de la versión de Java para todos los proyectos
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = JavaVersion.VERSION_21.toString()
+        targetCompatibility = JavaVersion.VERSION_21.toString()
+    }
 
     tasks.withType<Test> {
         useJUnitPlatform() // Para que Kotest funcione correctamente
         testLogging {
             events("passed", "skipped", "failed") // Muestra eventos de test en la consola
-            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL // Muestra stack traces completos
+            exceptionFormat =
+                org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL // Muestra stack traces completos
             showStandardStreams = true // Muestra stdout/stderr de los tests
         }
     }

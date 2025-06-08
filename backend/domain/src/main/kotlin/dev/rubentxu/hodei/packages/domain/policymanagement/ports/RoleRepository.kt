@@ -1,6 +1,7 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.ports
 
-import dev.rubentxu.hodei.packages.domain.model.permission.Role
+
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.Role
 import java.util.UUID
 
 /**
@@ -13,14 +14,14 @@ interface RoleRepository {
      * @param id The UUID of the role.
      * @return Result with the Role if found, or error.
      */
-    suspend fun findById(id: UUID): Result<Role?>
+    suspend fun findById(id: UUID): Result<Role>
 
     /**
      * Finds a role by its name.
      * @param name The name of the role.
      * @return Result with the Role if found, or error.
      */
-    suspend fun findByName(name: String): Result<Role?>
+    suspend fun findByName(name: String): Result<Role>
 
     /**
      * Retrieves all roles.
@@ -40,7 +41,7 @@ interface RoleRepository {
      * @param id The UUID of the role to delete.
      * @return Result with true if successfully deleted, false if it didn't exist, or error
      */
-    suspend fun delete(id: UUID): Result<Boolean>
+    suspend fun delete(id: UUID): Boolean
 
     /**
      * Finds all system roles.

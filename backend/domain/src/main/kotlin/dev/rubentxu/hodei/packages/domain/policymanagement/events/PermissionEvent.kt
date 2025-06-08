@@ -1,5 +1,8 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.events
 
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.RoleId
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
 import java.time.Instant
 import java.util.UUID
 
@@ -12,7 +15,7 @@ sealed class PermissionEvent {
      * Evento emitido cuando se crea un nuevo rol.
      */
     data class RoleCreated(
-        val roleId: UUID,
+        val roleId: RoleId,
         val name: String,
         val isSystemRole: Boolean,
         val createdBy: UUID,
@@ -23,7 +26,7 @@ sealed class PermissionEvent {
      * Evento emitido cuando se actualiza un rol existente.
      */
     data class RoleUpdated(
-        val roleId: UUID,
+        val roleId: RoleId,
         val name: String,
         val updatedBy: UUID,
         val timestamp: Instant,
@@ -34,9 +37,9 @@ sealed class PermissionEvent {
      * Evento emitido cuando se elimina un rol.
      */
     data class RoleDeleted(
-        val roleId: UUID,
+        val roleId: RoleId,
         val name: String,
-        val deletedBy: UUID,
+        val deletedBy: UserId,
         val timestamp: Instant,
     ) : PermissionEvent()
 
@@ -45,10 +48,10 @@ sealed class PermissionEvent {
      */
     data class PermissionGranted(
         val permissionId: UUID,
-        val userId: UUID,
-        val roleId: UUID,
+        val userId: UserId,
+        val roleId: RoleId,
         val roleName: String,
-        val repositoryId: UUID?,
+        val registryId: RegistryId?, // Cambiado a nulable
         val repositoryName: String?,
         val grantedBy: UUID,
         val timestamp: Instant,
@@ -60,10 +63,10 @@ sealed class PermissionEvent {
      */
     data class PermissionRevoked(
         val permissionId: UUID,
-        val userId: UUID,
-        val roleId: UUID,
+        val userId: UserId,
+        val roleId: RoleId,
         val roleName: String,
-        val repositoryId: UUID?,
+        val registryId: RegistryId?, // Cambiado a nulable
         val repositoryName: String?,
         val revokedBy: UUID,
         val timestamp: Instant,
@@ -74,10 +77,10 @@ sealed class PermissionEvent {
      */
     data class PermissionExpirationChanged(
         val permissionId: UUID,
-        val userId: UUID,
-        val roleId: UUID,
-        val repositoryId: UUID?,
-        val updatedBy: UUID,
+        val userId: UserId,
+        val roleId: RoleId,
+        val registryId: RegistryId?, // Cambiado a nulable
+        val updatedBy: UserId,
         val timestamp: Instant,
         val newExpiresAt: Instant?,
     ) : PermissionEvent()

@@ -2,7 +2,7 @@ package dev.rubentxu.hodei.packages.application.artifactmanagement.service
 
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.Artifact
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactCoordinates
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.UserId
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 
 
 interface ArtifactPublicationService {

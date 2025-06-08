@@ -9,9 +9,9 @@ hikariCP = "5.1.0"
 postgresqlDriver = "42.7.3"
 testcontainers = "1.19.7"
 testcontainersJunitJupiter = "1.19.3"
-kotlinxCoroutinesCore = "1.8.1"
-kotlinxCoroutinesTest = "1.8.0"
-kotlinxSerializationJson = "1.7.0"
+kotlinxCoroutinesCore = "1.10.2"
+kotlinxCoroutinesTest = "1.10.2"
+kotlinxSerializationJson = "1.8.1"
 ktlintGradlePlugin = "12.1.0"
 
 [libraries]

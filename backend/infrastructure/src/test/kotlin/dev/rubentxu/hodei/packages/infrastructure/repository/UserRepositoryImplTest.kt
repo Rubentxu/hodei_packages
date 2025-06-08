@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.infrastructure.repository
 
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.User
 import dev.rubentxu.hodei.packages.infrastructure.persistence.DatabaseFactory
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -31,7 +31,7 @@ class UserRepositoryImplTest {
 
     @Test
     fun `should save and retrieve admin by id`() {
-        val admin = AdminUser(
+        val admin = User(
             id = UUID.randomUUID(),
             username = "testuser",
             email = "test@example.com",
@@ -52,7 +52,7 @@ class UserRepositoryImplTest {
 
     @Test
     fun `should save and retrieve admin by username`() {
-        val admin = AdminUser(
+        val admin = User(
             id = UUID.randomUUID(),
             username = "testuser2",
             email = "test2@example.com",
@@ -73,7 +73,7 @@ class UserRepositoryImplTest {
 
     @Test
     fun `should save and retrieve admin by email`() {
-        val admin = AdminUser(
+        val admin = User(
             id = UUID.randomUUID(),
             username = "testuser3",
             email = "test3@example.com",
@@ -94,7 +94,7 @@ class UserRepositoryImplTest {
 
     @Test
     fun `should find all admins`() {
-        val admin1 = AdminUser(
+        val admin1 = User(
             id = UUID.randomUUID(),
             username = "testuser4",
             email = "test4@example.com",
@@ -105,7 +105,7 @@ class UserRepositoryImplTest {
             lastAccess = null
         )
 
-        val admin2 = AdminUser(
+        val admin2 = User(
             id = UUID.randomUUID(),
             username = "testuser5",
             email = "test5@example.com",
@@ -127,7 +127,7 @@ class UserRepositoryImplTest {
 
     @Test
     fun `should delete admin`() {
-        val admin = AdminUser(
+        val admin = User(
             id = UUID.randomUUID(),
             username = "testuser6",
             email = "test6@example.com",

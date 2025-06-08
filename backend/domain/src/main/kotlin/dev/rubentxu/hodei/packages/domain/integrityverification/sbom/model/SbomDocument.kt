@@ -1,6 +1,6 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.model
 
-import dev.rubentxu.hodei.packages.domain.model.sbom.SbomRelationship
+
 import java.time.Instant
 import java.util.*
 import java.security.MessageDigest

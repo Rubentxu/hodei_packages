@@ -3,7 +3,7 @@ package dev.rubentxu.hodei.packages.application.identityaccess.service
 import dev.rubentxu.hodei.packages.application.identityaccess.dto.AuthenticationResult
 import dev.rubentxu.hodei.packages.application.identityaccess.dto.LoginCommand
 import dev.rubentxu.hodei.packages.application.identityaccess.dto.RegisterAdminCommand
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.AdminUser
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.User
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.PasswordHasher
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.TokenService
 import dev.rubentxu.hodei.packages.domain.identityaccess.ports.UserRepository
@@ -55,7 +55,7 @@ class AuthServiceImpl(
                 
                 // Create and save new admin user
                 val hashedPassword = passwordHasher.hash(command.password)
-                val adminUser = AdminUser(
+                val user = User(
                     id = UUID.randomUUID(),
                     username = command.username,
                     email = command.email,
@@ -66,7 +66,7 @@ class AuthServiceImpl(
                     lastAccess = null,
                 )
                 
-                val savedUser = userRepository.save(adminUser)
+                val savedUser = userRepository.save(user)
                 
                 // Generate authentication token
                 val token = tokenService.generateToken(

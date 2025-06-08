@@ -1,5 +1,8 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.ports
 
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.RoleId
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
 import java.time.Instant
 import java.util.UUID
 
@@ -9,9 +12,9 @@ import java.util.UUID
  */
 data class UserPermission(
     val id: UUID,
-    val userId: UUID,
-    val roleId: UUID,
-    val registryId: UUID?,  // Null para roles globales
+    val userId: UserId,
+    val roleId: RoleId,
+    val registryId: RegistryId?,  // Cambiado a nulable
     val grantedBy: UUID,
     val grantedAt: Instant,
     val expiresAt: Instant?   // Null para permisos permanentes
@@ -40,8 +43,10 @@ data class UserPermission(
      * @param repoId ID del repositorio a verificar
      * @return true si el permiso aplica al repositorio, false en caso contrario
      */
-    fun appliesTo(repoId: UUID): Boolean {
-        return registryId == null || registryId == repoId
+    fun appliesTo(repoId: RegistryId): Boolean {
+        // Un permiso global (registryId == null) se aplica a cualquier repositorio.
+        // De lo contrario, solo se aplica si los IDs de repositorio coinciden.
+        return this.registryId == null || this.registryId == repoId
     }
     
     /**
@@ -58,15 +63,15 @@ data class UserPermission(
          * Crea un permiso global (aplica a todos los repositorios).
          */
         fun createGlobalPermission(
-            userId: UUID,
-            roleId: UUID,
+            userId: UserId,
+            roleId: RoleId,
             grantedBy: UUID,
             expiresAt: Instant? = null
         ): UserPermission = UserPermission(
             id = UUID.randomUUID(),
             userId = userId,
             roleId = roleId,
-            registryId = null,
+            registryId = null,  // Asignar null para permisos globales
             grantedBy = grantedBy,
             grantedAt = Instant.now(),
             expiresAt = expiresAt
@@ -76,16 +81,16 @@ data class UserPermission(
          * Crea un permiso específico para un repositorio.
          */
         fun createRepositoryPermission(
-            userId: UUID,
-            roleId: UUID,
-            repositoryId: UUID,
+            userId: UserId,
+            roleId: RoleId,
+            registryId: RegistryId,
             grantedBy: UUID,
             expiresAt: Instant? = null
         ): UserPermission = UserPermission(
             id = UUID.randomUUID(),
             userId = userId,
             roleId = roleId,
-            registryId = repositoryId,
+            registryId = registryId,
             grantedBy = grantedBy,
             grantedAt = Instant.now(),
             expiresAt = expiresAt

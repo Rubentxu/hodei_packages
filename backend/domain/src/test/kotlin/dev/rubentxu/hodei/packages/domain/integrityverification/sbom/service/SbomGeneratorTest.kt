@@ -1,7 +1,7 @@
 package dev.rubentxu.hodei.packages.domain.integrityverification.sbom.service
 
 
-import dev.rubentxu.hodei.packages.domain.common.events.EventPublisher
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.common.events.EventPublisher
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomGenerationCompletedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomGenerationFailedEvent
 import dev.rubentxu.hodei.packages.domain.integrityverification.sbom.events.SbomGenerationStartedEvent

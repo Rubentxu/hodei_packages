@@ -1,10 +1,13 @@
 package dev.rubentxu.hodei.packages.domain.policymanagement.service
 
-import dev.rubentxu.hodei.packages.domain.model.permission.Role
-import dev.rubentxu.hodei.packages.domain.model.permission.UserPermission
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import dev.rubentxu.hodei.packages.domain.policymanagement.events.PermissionEvent
 import dev.rubentxu.hodei.packages.domain.policymanagement.model.Permission
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.Role
+import dev.rubentxu.hodei.packages.domain.policymanagement.model.RoleId
 import dev.rubentxu.hodei.packages.domain.policymanagement.ports.PermissionRepository
+import dev.rubentxu.hodei.packages.domain.policymanagement.ports.UserPermission
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
 import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.RegistryRepository
 import java.time.Instant
 import java.util.*
@@ -27,7 +30,7 @@ class PermissionService(
             } else {
                 val now = Instant.now()
                 val role = Role(
-                    id = UUID.randomUUID(),
+                    id = RoleId(UUID.randomUUID()),
                     name = name,
                     description = description,
                     permissions = permissions,
@@ -36,7 +39,7 @@ class PermissionService(
                     createdAt = now,
                     updatedAt = now
                 )
-                
+
                 permissionRepository.saveRole(role).onSuccess { savedRole ->
                     eventPublisher(
                         PermissionEvent.RoleCreated(
@@ -53,7 +56,7 @@ class PermissionService(
     }
 
     suspend fun updateRole(
-        id: UUID,
+        id: RoleId,
         description: String? = null,
         permissions: Set<Permission>? = null,
         updatedBy: UUID
@@ -69,7 +72,7 @@ class PermissionService(
                         permissions = permissions?.also { changes["permissions"] = it } ?: role.permissions,
                         updatedAt = Instant.now()
                     )
-                    
+
                     if (changes.isEmpty()) {
                         Result.success(role)
                     } else {
@@ -90,7 +93,7 @@ class PermissionService(
         }
     }
 
-    suspend fun deleteRole(id: UUID, deletedBy: UUID): Result<Boolean> {
+    suspend fun deleteRole(id: RoleId, deletedBy: UserId): Result<Boolean> {
         return permissionRepository.findRoleById(id).flatMap { role ->
             when {
                 role == null -> Result.success(false)
@@ -118,7 +121,7 @@ class PermissionService(
         }
     }
 
-    private suspend fun isRoleInUse(roleId: UUID): Boolean {
+    private suspend fun isRoleInUse(roleId: RoleId): Boolean {
         val allUserIds = findAllUserIds()
         for (userId in allUserIds) {
             permissionRepository.findPermissionsByUserId(userId).onSuccess { permissions ->
@@ -130,14 +133,14 @@ class PermissionService(
         return false
     }
 
-    private suspend fun findAllUserIds(): List<UUID> {
+    private suspend fun findAllUserIds(): List<UserId> {
         // En un sistema real, esta información vendría de un repositorio de usuarios
         return emptyList() // Implementación temporal
     }
 
     suspend fun grantGlobalPermission(
-        userId: UUID,
-        roleId: UUID,
+        userId: UserId,
+        roleId: RoleId,
         grantedBy: UUID,
         expiresAt: Instant? = null
     ): Result<UserPermission> {
@@ -151,7 +154,7 @@ class PermissionService(
                     grantedBy = grantedBy,
                     expiresAt = expiresAt
                 )
-                
+
                 permissionRepository.saveUserPermission(userPermission).onSuccess { savedPermission ->
                     eventPublisher(
                         PermissionEvent.PermissionGranted(
@@ -159,7 +162,7 @@ class PermissionService(
                             userId = savedPermission.userId,
                             roleId = savedPermission.roleId,
                             roleName = role.name,
-                            repositoryId = savedPermission.registryId,
+                            registryId = savedPermission.registryId,
                             repositoryName = null,
                             grantedBy = savedPermission.grantedBy,
                             expiresAt = savedPermission.expiresAt,
@@ -172,28 +175,28 @@ class PermissionService(
     }
 
     suspend fun grantRepositoryPermission(
-        userId: UUID,
-        roleId: UUID,
-        repositoryId: UUID,
+        userId: UserId,
+        roleId: RoleId,
+        registryId: RegistryId,
         grantedBy: UUID,
         expiresAt: Instant? = null
     ): Result<UserPermission> {
         val roleResult = permissionRepository.findRoleById(roleId)
-        val role = roleResult.getOrNull() 
+        val role = roleResult.getOrNull()
             ?: return Result.failure(IllegalArgumentException("Role with ID '$roleId' not found"))
-        
-        return registryRepository.findById(repositoryId).flatMap { repository ->
+
+        return registryRepository.findById(registryId).flatMap { repository ->
             if (repository == null) {
-                Result.failure(IllegalArgumentException("ArtifactRegistry with ID '$repositoryId' not found"))
+                Result.failure(IllegalArgumentException("ArtifactRegistry with ID '$registryId' not found"))
             } else {
                 val userPermission = UserPermission.Companion.createRepositoryPermission(
                     userId = userId,
                     roleId = roleId,
-                    repositoryId = repositoryId,
+                    registryId = registryId,
                     grantedBy = grantedBy,
                     expiresAt = expiresAt
                 )
-                
+
                 permissionRepository.saveUserPermission(userPermission).onSuccess { savedPermission ->
                     eventPublisher(
                         PermissionEvent.PermissionGranted(
@@ -201,7 +204,7 @@ class PermissionService(
                             userId = savedPermission.userId,
                             roleId = savedPermission.roleId,
                             roleName = role.name,
-                            repositoryId = savedPermission.registryId,
+                            registryId = savedPermission.registryId,
                             repositoryName = repository.name,
                             grantedBy = savedPermission.grantedBy,
                             expiresAt = savedPermission.expiresAt,
@@ -216,7 +219,7 @@ class PermissionService(
     suspend fun revokePermission(permissionId: UUID, revokedBy: UUID): Result<Boolean> {
         val permissionResult = findPermissionById(permissionId)
         val permission = permissionResult.getOrNull() ?: return Result.success(false)
-        
+
         return permissionRepository.findRoleById(permission.roleId).flatMap { role ->
             if (role == null) {
                 Result.failure(IllegalStateException("Role with ID '${permission.roleId}' not found"))
@@ -226,14 +229,14 @@ class PermissionService(
                         val repositoryName = permission.registryId?.let { repoId ->
                             registryRepository.findById(repoId).getOrNull()?.name
                         }
-                        
+
                         eventPublisher(
                             PermissionEvent.PermissionRevoked(
                                 permissionId = permission.id,
                                 userId = permission.userId,
                                 roleId = permission.roleId,
                                 roleName = role.name,
-                                repositoryId = permission.registryId,
+                                registryId = permission.registryId,
                                 repositoryName = repositoryName,
                                 revokedBy = revokedBy,
                                 timestamp = Instant.now()
@@ -262,13 +265,13 @@ class PermissionService(
     suspend fun updatePermissionExpiration(
         permissionId: UUID,
         newExpiresAt: Instant?,
-        updatedBy: UUID
+        updatedBy: UserId
     ): Result<UserPermission> {
         val permissionResult = findPermissionById(permissionId)
         if (permissionResult.isFailure) {
             return Result.failure(IllegalArgumentException("Permission with ID '$permissionId' not found"))
         }
-        
+
         val permission = permissionResult.getOrThrow()
         if (permission.expiresAt != newExpiresAt) {
             val updatedPermission = permission.withNewExpiration(newExpiresAt)
@@ -278,7 +281,7 @@ class PermissionService(
                         permissionId = savedPermission.id,
                         userId = savedPermission.userId,
                         roleId = savedPermission.roleId,
-                        repositoryId = savedPermission.registryId,
+                        registryId = savedPermission.registryId,
                         newExpiresAt = savedPermission.expiresAt,
                         updatedBy = updatedBy,
                         timestamp = Instant.now()
@@ -286,14 +289,14 @@ class PermissionService(
                 )
             }
         }
-        
+
         return Result.success(permission)
     }
 
     suspend fun hasPermission(
-        userId: UUID,
+        userId: UserId,
         permission: Permission,
-        repositoryId: UUID? = null
+        repositoryId: RegistryId? = null
     ): Result<Boolean> {
         return permissionRepository.findPermissionsByUserId(userId, activeOnly = true).map { permissions ->
             // Verificar permisos globales primero
@@ -303,7 +306,7 @@ class PermissionService(
                     val roleResult = permissionRepository.findRoleById(userPermission.roleId).getOrNull()
                     roleResult?.permissions?.contains(permission) == true
                 }
-            
+
             if (hasGlobalPermission) {
                 true
             } else if (repositoryId != null) {
@@ -325,31 +328,31 @@ class PermissionService(
     }
 
     suspend fun findUserPermissions(
-        userId: UUID? = null,
-        repositoryId: UUID? = null,
-        roleId: UUID? = null,
+        userId: UserId? = null,
+        registryId: RegistryId? = null,
+        roleId: RoleId? = null,
         activeOnly: Boolean = true
     ): Result<List<UserPermission>> {
         if (userId != null) {
             return permissionRepository.findPermissionsByUserId(userId, activeOnly).map { permissions ->
                 permissions.filter { permission ->
-                    (repositoryId == null || permission.registryId == repositoryId) &&
+                    (registryId == null || permission.registryId == registryId) &&
                             (roleId == null || permission.roleId == roleId)
                 }
             }
-        } 
-        
-        if (repositoryId != null) {
-            return permissionRepository.findPermissionsByRepositoryId(repositoryId, activeOnly).map { permissions ->
+        }
+
+        if (registryId != null) {
+            return permissionRepository.findPermissionsByRepositoryId(registryId, activeOnly).map { permissions ->
                 permissions.filter { permission ->
                     roleId == null || permission.roleId == roleId
                 }
             }
-        } 
-        
+        }
+
         val result = mutableListOf<UserPermission>()
         val allUserIds = findAllUserIds()
-        
+
         for (uId in allUserIds) {
             permissionRepository.findPermissionsByUserId(uId, activeOnly).onSuccess { permissions ->
                 result.addAll(permissions.filter { permission ->
@@ -357,7 +360,7 @@ class PermissionService(
                 })
             }
         }
-        
+
         return Result.success(result)
     }
 }

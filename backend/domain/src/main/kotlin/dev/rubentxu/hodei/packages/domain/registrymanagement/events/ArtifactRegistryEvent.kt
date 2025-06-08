@@ -1,7 +1,8 @@
 package dev.rubentxu.hodei.packages.domain.registrymanagement.events
 
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.UserId
-import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryType
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactType
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+
 import java.time.Instant
 import java.util.UUID
 
@@ -16,7 +17,7 @@ sealed class ArtifactRegistryEvent {
     data class ArtifactRegistryCreated(
         val registryId: UUID,
         val name: String,
-        val type: RegistryType,
+        val type: ArtifactType,
         val createdBy: UserId,
         val timestamp: Instant,
     ) : ArtifactRegistryEvent()
