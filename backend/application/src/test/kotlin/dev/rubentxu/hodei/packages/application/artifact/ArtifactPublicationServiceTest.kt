@@ -2,16 +2,22 @@ package dev.rubentxu.hodei.packages.application.artifact
 
 import dev.rubentxu.hodei.packages.application.artifactmanagement.service.ArtifactPublicationService
 import dev.rubentxu.hodei.packages.application.artifactmanagement.service.PublishArtifactCommand
-import dev.rubentxu.hodei.packages.domain.model.artifact.Artifact
-import dev.rubentxu.hodei.packages.domain.model.artifact.ArtifactCoordinates
-import dev.rubentxu.hodei.packages.domain.model.artifact.UserId
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactCoordinates
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactGroup
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactVersion
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.Artifact
 
 class ArtifactPublicationServiceTest : BehaviorSpec({
     given("un comando de publicación de artefacto válido") {
         val command = PublishArtifactCommand(
-            coordinates = ArtifactCoordinates("dev.rubentxu", "libfoo", "1.0.0"),
+            coordinates = ArtifactCoordinates(
+                group = ArtifactGroup("dev.rubentxu.hodei"),
+                name = "libfoo",
+                version = ArtifactVersion("1.0.0")
+            ),
             fileContent = "contenido".toByteArray(),
             createdBy = UserId("dev")
         )

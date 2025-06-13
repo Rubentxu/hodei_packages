@@ -1,4 +1,4 @@
-package dev.rubentxu.hodei.packages.domain.registrymanagement.ports
+package dev.rubentxu.hodei.packages.domain.artifactmanagement.service
 
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ContentHash
 
@@ -20,7 +20,7 @@ interface StorageService {
      * for example, to check if it already `exists`.
      *
      * @param content The byte array content to hash.
-     * @return The calculated [ContentHash] for the provided content.
+     * @return The calculated [dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ContentHash] for the provided content.
      */
     suspend fun calculateHash(content: ByteArray): ContentHash
 

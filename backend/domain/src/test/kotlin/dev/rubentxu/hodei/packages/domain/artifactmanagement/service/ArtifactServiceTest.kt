@@ -14,7 +14,7 @@ import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
 import dev.rubentxu.hodei.packages.domain.registrymanagement.model.*
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.FormatHandler
 import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.RegistryRepository
-import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.StorageService
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.service.StorageService
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.result.shouldBeFailure
 import io.kotest.matchers.result.shouldBeSuccess

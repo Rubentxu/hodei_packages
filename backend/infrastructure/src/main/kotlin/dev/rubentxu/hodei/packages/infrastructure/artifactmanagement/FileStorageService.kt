@@ -1,10 +1,9 @@
-package dev.rubentxu.hodei.packages.domain.registrymanagement.service
+package dev.rubentxu.hodei.packages.infrastructure.artifactmanagement
 
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ContentHash
-import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.StorageService
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.service.StorageService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -51,7 +50,7 @@ class FileStorageService(
      * This implementation is consistent with the hashing used for storing files.
      *
      * @param content The byte array content to hash.
-     * @return The calculated [ContentHash].
+     * @return The calculated [dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ContentHash].
      */
     override suspend fun calculateHash(content: ByteArray): ContentHash = withContext(Dispatchers.IO) {
         // This specific hashing logic could also be a private utility if not exposed elsewhere

@@ -1,35 +1,45 @@
-package dev.rubentxu.hodei.packages.domain.artifactmanagement.service
-
+package dev.rubentxu.hodei.packages.application.artifactmanagement.service
 
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.command.UploadArtifactCommand
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactDeletedEvent
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactDownloadedEvent
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactMetadataUpdatedEvent
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactPublishedEvent
-import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.*
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.Artifact
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactCoordinates
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactId
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactMetadata
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactStatus
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactType
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ContentHash
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.ArtifactRepository
-import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
-import dev.rubentxu.hodei.packages.domain.registrymanagement.model.*
 import dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.FormatHandler
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.service.ArtifactServicePort
+import dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.DeploymentPolicy
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.HostedRegistry
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.Registry
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId
+import dev.rubentxu.hodei.packages.domain.registrymanagement.model.RepositoryType
 import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.RegistryRepository
-import dev.rubentxu.hodei.packages.domain.registrymanagement.ports.StorageService
+import dev.rubentxu.hodei.packages.domain.artifactmanagement.service.StorageService
 import java.time.Instant
-
+import java.util.UUID
 
 /**
  * Domain service that encapsulates business logic related to artifact management.
  * This service coordinates operations between artifacts and repositories, and emits domain events.
- * It relies on [ArtifactRepository] for artifact persistence, [RegistryRepository] for registry metadata,
- * [StorageService] for content operations, and [FormatHandler]s for type-specific logic.
+ * It relies on [dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.ArtifactRepository] for artifact persistence, [dev.rubentxu.hodei.packages.domain.registrymanagement.ports.RegistryRepository] for registry metadata,
+ * [StorageService] for content operations, and [dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.FormatHandler]s for type-specific logic.
  *
  * @property artifactRepository Port for artifact data persistence.
  * @property registryRepository Port for registry metadata persistence.
  * @property storageService Port for artifact content storage and hashing.
- * @property handlers A map of [ArtifactType] to their respective [FormatHandler] implementations.
- * @property publishArtifactEvent Callback to publish an [ArtifactPublishedEvent].
- * @property publishDownloadEvent Callback to publish an [ArtifactDownloadedEvent].
- * @property publishMetadataUpdateEvent Callback to publish an [ArtifactMetadataUpdatedEvent].
- * @property publishDeleteEvent Callback to publish an [ArtifactDeletedEvent].
+ * @property handlers A map of [dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactType] to their respective [dev.rubentxu.hodei.packages.domain.artifactmanagement.ports.FormatHandler] implementations.
+ * @property publishArtifactEvent Callback to publish an [dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactPublishedEvent].
+ * @property publishDownloadEvent Callback to publish an [dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactDownloadedEvent].
+ * @property publishMetadataUpdateEvent Callback to publish an [dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactMetadataUpdatedEvent].
+ * @property publishDeleteEvent Callback to publish an [dev.rubentxu.hodei.packages.domain.artifactmanagement.events.ArtifactDeletedEvent].
  */
 class ArtifactService(
     private val artifactRepository: ArtifactRepository,
@@ -111,7 +121,7 @@ class ArtifactService(
             )
 
             // 5. Create Artifact instance
-            val artifactId = ArtifactId(java.util.UUID.randomUUID().toString()) // O alguna otra forma de generar ArtifactId
+            val artifactId = ArtifactId(UUID.randomUUID().toString()) // O alguna otra forma de generar ArtifactId
 
             val extractMetadataResult = handler.extractMetadataWithSources(
                 filename = command.filename,
@@ -217,7 +227,7 @@ class ArtifactService(
      * To get the actual content, use `retrieveArtifactContent`.
      *
      * @param artifactId The [ArtifactId] of the artifact to download.
-     * @param downloadedBy The optional [UserId] of the user downloading the artifact.
+     * @param downloadedBy The optional [dev.rubentxu.hodei.packages.domain.identityaccess.model.UserId] of the user downloading the artifact.
      * @param clientIp The optional IP address of the client downloading the artifact.
      * @param userAgent The optional user agent string of the client.
      * @return A [Result] containing the [Artifact] metadata if found, or an error.
@@ -259,8 +269,8 @@ class ArtifactService(
     /**
      * Retrieves the actual content of an artifact.
      *
-     * @param registryId The [RegistryId] context (used for authorization/policy checks).
-     * @param contentHash The [ContentHash] of the artifact to retrieve.
+     * @param registryId The [dev.rubentxu.hodei.packages.domain.registrymanagement.model.RegistryId] context (used for authorization/policy checks).
+     * @param contentHash The [dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ContentHash] of the artifact to retrieve.
      * @return A [Result] containing the [ByteArray] content if successful, or an error.
      */
     override suspend fun retrieveArtifactContent(
@@ -370,7 +380,7 @@ class ArtifactService(
      * Immutable fields like original `createdBy` and `createdAt` are preserved from the existing record.
      *
      * @param artifactId The [ArtifactId] of the artifact to update.
-     * @param newMetadataValues An [ArtifactMetadata] object containing the new values for the descriptive metadata fields.
+     * @param newMetadataValues An [dev.rubentxu.hodei.packages.domain.artifactmanagement.model.ArtifactMetadata] object containing the new values for the descriptive metadata fields.
      *                          The `id`, `createdBy`, and `createdAt` fields within this object should ideally match the
      *                          existing ones or will be effectively ignored in favor of the persisted values for those fields.
      * @param updatedBy The [UserId] of the user performing the update, used for eventing.
